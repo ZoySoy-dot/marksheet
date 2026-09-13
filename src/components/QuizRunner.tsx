@@ -21,14 +21,20 @@ export type Mode = "reviewer" | "test";
 type Settings = {
   shuffleQuestions: boolean;
   shuffleAnswers: boolean;
+  /** How many questions to ask. 0 means all of them. */
+  count: number;
   mode: Mode;
 };
 
 const DEFAULT_SETTINGS: Settings = {
   shuffleQuestions: false,
   shuffleAnswers: false,
+  count: 0,
   mode: "reviewer",
 };
+
+/** Offered only where they would actually shorten the quiz. */
+const LENGTHS = [5, 10, 15, 20, 25, 30, 40, 50];
 
 const SETTINGS_KEY = "marksheet.settings";
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -114,6 +120,7 @@ export default function QuizRunner({
       setSettings({
         shuffleQuestions: Boolean(saved.shuffleQuestions),
         shuffleAnswers: Boolean(saved.shuffleAnswers),
+        count: Number.isInteger(saved.count) && saved.count! > 0 ? saved.count! : 0,
         // Settings saved before modes existed carried an "instant" flag.
         mode:
           saved.mode === "test" || saved.mode === "reviewer"
@@ -139,8 +146,12 @@ export default function QuizRunner({
     });
   };
 
-  const start = useCallback((pool: Question[], s: Settings) => {
-    let list = s.shuffleQuestions ? shuffle(pool) : [...pool];
+  const start = useCallback((pool: Question[], s: Settings, limit = true) => {
+    const shortening = limit && s.count > 0 && s.count < pool.length;
+    // A subset has to be drawn at random, or it would always be the same
+    // opening questions.
+    let list = s.shuffleQuestions || shortening ? shuffle(pool) : [...pool];
+    if (shortening) list = list.slice(0, s.count);
     if (s.shuffleAnswers) {
       list = list.map((q) => ({ ...q, options: shuffle(q.options) }));
     }
@@ -426,6 +437,9 @@ export default function QuizRunner({
     const canResume = savedRun
       ? savedRun.orderKeys.filter((key) => questionByKey.has(key)).length
       : 0;
+    const asked =
+      settings.count > 0 ? Math.min(settings.count, questions.length) : questions.length;
+    const lengths = LENGTHS.filter((n) => n < questions.length);
     return (
       <>
         
@@ -435,8 +449,10 @@ export default function QuizRunner({
 
         <div className="ready-meta">
           <p className="figure">
-            <span className="figure-num">{questions.length}</span>
-            <span className="figure-label">questions</span>
+            <span className="figure-num">{asked}</span>
+            <span className="figure-label">
+              {asked < questions.length ? `of ${questions.length} questions` : "questions"}
+            </span>
           </p>
           <p className="figure">
             <span className="figure-num">{multiCount}</span>
@@ -445,6 +461,36 @@ export default function QuizRunner({
         </div>
 
         {footnote ? <p className="ready-note">{footnote}</p> : null}
+
+        {lengths.length > 0 ? (
+          <fieldset className="lengths">
+            <legend className="rubric">How many questions</legend>
+            <div className="count-row">
+              <button
+                className={`count-btn${settings.count === 0 ? " is-picked" : ""}`}
+                type="button"
+                onClick={() => updateSettings({ count: 0 })}
+              >
+                All {questions.length}
+              </button>
+              {lengths.map((n) => (
+                <button
+                  key={n}
+                  className={`count-btn${settings.count === n ? " is-picked" : ""}`}
+                  type="button"
+                  onClick={() => updateSettings({ count: n })}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            {asked < questions.length ? (
+              <p className="lengths-note">
+                A different {asked} each time, drawn at random from all {questions.length}.
+              </p>
+            ) : null}
+          </fieldset>
+        ) : null}
 
         <fieldset className="modes">
           <legend className="rubric">Mode</legend>
@@ -601,7 +647,7 @@ export default function QuizRunner({
           <button
             className="btn btn-primary"
             type="button"
-            onClick={() => start(missed, settings)}
+            onClick={() => start(missed, settings, false)}
             disabled={missed.length === 0}
           >
             {missed.length === 0 ? "No mistakes to work on" : "Work on my mistakes"}

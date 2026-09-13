@@ -1219,6 +1219,10 @@ body > .ML__keyboard { z-index: 40; }
 
 /* ---------- modes and switches ---------- */
 
+.lengths { margin: 1.5rem 0 0; padding: 0; border: 0; max-width: 34rem; }
+.lengths legend { padding: 0; margin-bottom: .7rem; }
+.lengths-note { margin: .7rem 0 0; font-size: .88rem; color: var(--muted); }
+
 .modes { margin: 1.5rem 0 0; padding: 0; border: 0; display: grid; gap: .5rem; max-width: 34rem; }
 .modes legend { padding: 0; margin-bottom: .7rem; }
 
