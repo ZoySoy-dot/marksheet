@@ -6,16 +6,23 @@ import type { Question } from "@/lib/parse";
 
 type Phase = "ready" | "running" | "report";
 
+/**
+ * Reviewer marks each answer the moment you commit to it, so you learn while
+ * you go. Test holds everything back until the end, the way the real paper
+ * does — you can still change your mind on the way through.
+ */
+export type Mode = "reviewer" | "test";
+
 type Settings = {
   shuffleQuestions: boolean;
   shuffleAnswers: boolean;
-  instant: boolean;
+  mode: Mode;
 };
 
 const DEFAULT_SETTINGS: Settings = {
   shuffleQuestions: false,
   shuffleAnswers: false,
-  instant: true,
+  mode: "reviewer",
 };
 
 const SETTINGS_KEY = "marksheet.settings";
@@ -67,7 +74,19 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
-      if (raw) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
+      if (!raw) return;
+      const saved = JSON.parse(raw) as Partial<Settings> & { instant?: boolean };
+      setSettings({
+        shuffleQuestions: Boolean(saved.shuffleQuestions),
+        shuffleAnswers: Boolean(saved.shuffleAnswers),
+        // Settings saved before modes existed carried an "instant" flag.
+        mode:
+          saved.mode === "test" || saved.mode === "reviewer"
+            ? saved.mode
+            : saved.instant === false
+              ? "test"
+              : "reviewer",
+      });
     } catch {
       /* keep the defaults */
     }
@@ -145,7 +164,7 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
   const advance = useCallback(() => {
     if (!current) return;
     const picked = picks[current.id] ?? [];
-    if (settings.instant && !revealed[current.id] && picked.length > 0) {
+    if (settings.mode === "reviewer" && !revealed[current.id] && picked.length > 0) {
       setRevealed((prev) => ({ ...prev, [current.id]: true }));
       return;
     }
@@ -154,7 +173,7 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
       return;
     }
     setPhase("report");
-  }, [current, picks, settings.instant, revealed, index, deck.length]);
+  }, [current, picks, settings.mode, revealed, index, deck.length]);
 
   useEffect(() => {
     if (phase !== "running") return;
@@ -209,6 +228,47 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
 
         {footnote ? <p className="ready-note">{footnote}</p> : null}
 
+        <fieldset className="modes">
+          <legend className="rubric">How it grades you</legend>
+
+          <label className="mode">
+            <input
+              type="radio"
+              name="marksheet-mode"
+              checked={settings.mode === "reviewer"}
+              onChange={() => updateSettings({ mode: "reviewer" })}
+            />
+            <span className="bubble" aria-hidden="true">
+              <span className="bubble-fill" />
+            </span>
+            <span className="mode-body">
+              <span className="mode-name">Reviewer</span>
+              <span className="mode-note">
+                Marks every answer the moment you commit, and shows the explanation there and then.
+              </span>
+            </span>
+          </label>
+
+          <label className="mode">
+            <input
+              type="radio"
+              name="marksheet-mode"
+              checked={settings.mode === "test"}
+              onChange={() => updateSettings({ mode: "test" })}
+            />
+            <span className="bubble" aria-hidden="true">
+              <span className="bubble-fill" />
+            </span>
+            <span className="mode-body">
+              <span className="mode-name">Test</span>
+              <span className="mode-note">
+                Tells you nothing until the end. Go back and change answers as much as you like,
+                then grade the whole sheet at once.
+              </span>
+            </span>
+          </label>
+        </fieldset>
+
         <fieldset className="options">
           <legend className="rubric">Before you start</legend>
           <label className="switch">
@@ -228,15 +288,6 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
             />
             <span className="switch-box" aria-hidden="true" />
             <span className="switch-text">Shuffle answers</span>
-          </label>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.instant}
-              onChange={(e) => updateSettings({ instant: e.target.checked })}
-            />
-            <span className="switch-box" aria-hidden="true" />
-            <span className="switch-text">Check each answer as I go</span>
           </label>
         </fieldset>
 
@@ -370,8 +421,13 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
   const isLast = index === deck.length - 1;
 
   let nextLabel: string;
-  if (settings.instant && !isRevealed) nextLabel = picked.length ? "Check answer" : "Skip";
-  else nextLabel = isLast ? "See results" : "Next question";
+  if (settings.mode === "reviewer" && !isRevealed) {
+    nextLabel = picked.length ? "Check answer" : "Skip";
+  } else if (isLast) {
+    nextLabel = settings.mode === "test" ? "Finish and grade" : "See results";
+  } else {
+    nextLabel = "Next question";
+  }
 
   return (
     <>
@@ -388,6 +444,7 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
             return <li key={q.id} className={classes.join(" ")} />;
           })}
         </ol>
+        <p className="drill-mode rubric">{settings.mode === "test" ? "Test" : "Reviewer"}</p>
         <button className="link-btn link-btn-warn" type="button" onClick={() => setPhase("ready")}>
           End drill
         </button>

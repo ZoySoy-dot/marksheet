@@ -521,6 +521,77 @@ kbd {
   outline-offset: 2px;
 }
 
+/* ---------- mode picker ---------- */
+
+/* The same bubble the sheet is made of: a circle means pick one. */
+.modes {
+  margin: 1.75rem 0 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: .5rem;
+  max-width: 34rem;
+}
+
+.modes legend {
+  padding: 0;
+  margin-bottom: .7rem;
+}
+
+.mode {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: .85rem;
+  padding: .9rem 1.1rem;
+  border: 1px solid var(--rule-firm);
+  border-radius: 3px;
+  background: var(--stock-2);
+  cursor: pointer;
+  transition: border-color .14s var(--ease);
+}
+.mode:hover { border-color: var(--graphite-3); }
+
+.mode input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.mode .bubble { margin-top: .15rem; }
+.mode input:checked ~ .bubble { border-color: var(--graphite); }
+.mode input:checked ~ .bubble .bubble-fill { transform: scale(1); }
+.mode input:focus-visible ~ .bubble {
+  outline: 2px solid var(--dropout);
+  outline-offset: 3px;
+}
+.mode:has(input:checked) { border-color: var(--graphite); }
+
+.mode-body { display: grid; gap: .2rem; }
+
+.mode-name {
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-stretch: 108%;
+  font-size: .82rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.mode-note {
+  font-size: .88rem;
+  line-height: 1.45;
+  color: var(--graphite-2);
+}
+
+.drill-mode {
+  flex: none;
+  border: 1px solid var(--dropout);
+  border-radius: 2px;
+  padding: .16rem .5rem;
+}
+
 /* ---------- buttons ---------- */
 
 .btn {
