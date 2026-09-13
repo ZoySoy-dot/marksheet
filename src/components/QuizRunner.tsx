@@ -824,7 +824,7 @@ export default function QuizRunner({
         ) : null}
       </div>
 
-      <div className="actions">
+      <div className="actions actions-quiz">
         <button
           className="btn btn-quiet"
           type="button"
@@ -838,11 +838,12 @@ export default function QuizRunner({
         </button>
       </div>
 
-      <p className="keyhint">
-        Press <kbd>A</kbd>–<kbd>{LETTERS[Math.max(0, current.options.length - 1)]}</kbd> or{" "}
-        <kbd>1</kbd>–<kbd>{Math.min(9, current.options.length)}</kbd> to mark an answer.{" "}
-        <kbd>Enter</kbd> to continue.
-      </p>
+      {current.options.length <= 10 ? (
+        <p className="keyhint">
+          Press <kbd>1</kbd>–<kbd>{Math.min(9, current.options.length)}</kbd> to mark an answer.{" "}
+          <kbd>Enter</kbd> to continue.
+        </p>
+      ) : null}
     </>
   );
 }
