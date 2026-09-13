@@ -36,6 +36,11 @@ const DEFAULT_SETTINGS: Settings = {
 /** Offered only where they would actually shorten the quiz. */
 const LENGTHS = [5, 10, 15, 20, 25, 30, 40, 50];
 
+const MODES: { id: Mode; label: string }[] = [
+  { id: "reviewer", label: "Reviewer" },
+  { id: "test", label: "Test" },
+];
+
 const SETTINGS_KEY = "marksheet.settings";
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -462,97 +467,97 @@ export default function QuizRunner({
 
         {footnote ? <p className="ready-note">{footnote}</p> : null}
 
-        {lengths.length > 0 ? (
-          <fieldset className="lengths">
-            <legend className="rubric">How many questions</legend>
-            <div className="count-row">
-              <button
-                className={`count-btn${settings.count === 0 ? " is-picked" : ""}`}
-                type="button"
-                onClick={() => updateSettings({ count: 0 })}
-              >
-                All {questions.length}
-              </button>
-              {lengths.map((n) => (
-                <button
-                  key={n}
-                  className={`count-btn${settings.count === n ? " is-picked" : ""}`}
-                  type="button"
-                  onClick={() => updateSettings({ count: n })}
+        <div className="setup">
+          <div className="setup-row">
+            <span className="setup-label" id="setup-mode">
+              Mode
+            </span>
+            <div className="seg" role="radiogroup" aria-labelledby="setup-mode">
+              {MODES.map((option) => (
+                <label
+                  key={option.id}
+                  className={`seg-btn${settings.mode === option.id ? " is-picked" : ""}`}
                 >
-                  {n}
-                </button>
+                  <input
+                    className="sr-only"
+                    type="radio"
+                    name="marksheet-mode"
+                    checked={settings.mode === option.id}
+                    onChange={() => updateSettings({ mode: option.id })}
+                  />
+                  {option.label}
+                </label>
               ))}
             </div>
-            {asked < questions.length ? (
-              <p className="lengths-note">
-                A different {asked} each time, drawn at random from all {questions.length}.
-              </p>
-            ) : null}
-          </fieldset>
-        ) : null}
+          </div>
+          <p className="setup-hint">
+            {settings.mode === "test"
+              ? "Nothing until the end. Change answers freely, then grade it all at once."
+              : "Marks each answer as you go, with the explanation."}
+          </p>
 
-        <fieldset className="modes">
-          <legend className="rubric">Mode</legend>
+          {lengths.length > 0 ? (
+            <>
+              <div className="setup-row">
+                <span className="setup-label" id="setup-length">
+                  Length
+                </span>
+                <div className="count-row" role="radiogroup" aria-labelledby="setup-length">
+                  <button
+                    className={`count-btn${settings.count === 0 ? " is-picked" : ""}`}
+                    type="button"
+                    role="radio"
+                    aria-checked={settings.count === 0}
+                    onClick={() => updateSettings({ count: 0 })}
+                  >
+                    All {questions.length}
+                  </button>
+                  {lengths.map((n) => (
+                    <button
+                      key={n}
+                      className={`count-btn${settings.count === n ? " is-picked" : ""}`}
+                      type="button"
+                      role="radio"
+                      aria-checked={settings.count === n}
+                      onClick={() => updateSettings({ count: n })}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {asked < questions.length ? (
+                <p className="setup-hint">
+                  A different {asked} each time, drawn at random from all {questions.length}.
+                </p>
+              ) : null}
+            </>
+          ) : null}
 
-          <label className="mode">
-            <input
-              type="radio"
-              name="marksheet-mode"
-              checked={settings.mode === "reviewer"}
-              onChange={() => updateSettings({ mode: "reviewer" })}
-            />
-            <span className="bubble" aria-hidden="true">
-              <span className="bubble-fill" />
-            </span>
-            <span className="mode-body">
-              <span className="mode-name">Reviewer</span>
-              <span className="mode-note">
-                Marks each answer as you go, with the explanation.
-              </span>
-            </span>
-          </label>
-
-          <label className="mode">
-            <input
-              type="radio"
-              name="marksheet-mode"
-              checked={settings.mode === "test"}
-              onChange={() => updateSettings({ mode: "test" })}
-            />
-            <span className="bubble" aria-hidden="true">
-              <span className="bubble-fill" />
-            </span>
-            <span className="mode-body">
-              <span className="mode-name">Test</span>
-              <span className="mode-note">
-                Nothing until the end. Change answers freely, then grade it all at once.
-              </span>
-            </span>
-          </label>
-        </fieldset>
-
-        <fieldset className="options">
-          <legend className="rubric">Options</legend>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.shuffleQuestions}
-              onChange={(e) => updateSettings({ shuffleQuestions: e.target.checked })}
-            />
-            <span className="switch-box" aria-hidden="true" />
-            <span className="switch-text">Shuffle questions</span>
-          </label>
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={settings.shuffleAnswers}
-              onChange={(e) => updateSettings({ shuffleAnswers: e.target.checked })}
-            />
-            <span className="switch-box" aria-hidden="true" />
-            <span className="switch-text">Shuffle answers</span>
-          </label>
-        </fieldset>
+          <div className="setup-row">
+            <span className="setup-label">Shuffle</span>
+            <div className="setup-switches">
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={settings.shuffleQuestions}
+                  onChange={(e) => updateSettings({ shuffleQuestions: e.target.checked })}
+                />
+                <span className="switch-box" aria-hidden="true" />
+                <span className="switch-text">Questions</span>
+              </label>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={settings.shuffleAnswers}
+                  onChange={(e) => updateSettings({ shuffleAnswers: e.target.checked })}
+                />
+                <span className="switch-box" aria-hidden="true" />
+                <span className="switch-text">Answers</span>
+              </label>
+            </div>
+          </div>
+        </div>
 
         <div className="actions">
           {canResume ? (

@@ -337,14 +337,6 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 }
 .nav-panel-link[aria-current="page"] { color: var(--accent); }
 
-.nav-panel-foot {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  flex-wrap: wrap;
-  padding-top: 1rem;
-}
-
 /* The one-line header only survives where there is room for it. */
 @media (max-width: 47.99rem) {
   .masthead-right { display: none; }
@@ -464,12 +456,6 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 
 .band h2 { font-size: clamp(1.4rem, 3vw, 1.75rem); }
 
-.band-sub {
-  margin: .6rem 0 0;
-  color: var(--muted);
-  max-width: 52ch;
-}
-
 .tiles {
   list-style: none;
   margin: 2rem 0 0;
@@ -574,8 +560,6 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 .opt-static.is-marked .bubble-fill { transform: scale(1); }
 
 /* ---------- editor ---------- */
-
-.sheet { display: grid; gap: 2rem; }
 
 .editor-form { margin-top: 1.75rem; }
 
@@ -772,7 +756,6 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 .icon-btn.icon-btn-warn:hover:not(:disabled) { color: var(--bad); border-color: var(--bad); }
 
 .qbuild-q,
-.qbuild-a,
 .qbuild-note {
   width: 100%;
   min-width: 0;
@@ -785,8 +768,8 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
   font-size: .97rem;
   transition: border-color .15s var(--ease);
 }
-.qbuild-q:focus, .qbuild-a:focus, .qbuild-note:focus { outline: none; border-color: var(--accent); }
-.qbuild-q::placeholder, .qbuild-a::placeholder, .qbuild-note::placeholder { color: var(--faint); }
+.qbuild-q:focus, .qbuild-note:focus { outline: none; border-color: var(--accent); }
+.qbuild-q::placeholder, .qbuild-note::placeholder { color: var(--faint); }
 .qbuild-q { font-size: 1.02rem; font-weight: 540; letter-spacing: -.015em; }
 .qbuild-note {
   margin-top: .7rem;
@@ -1217,41 +1200,65 @@ body > .ML__keyboard { z-index: 40; }
 
 .keyhint { margin: 1.2rem 0 0; font-size: .85rem; color: var(--faint); line-height: 1.9; }
 
-/* ---------- modes and switches ---------- */
+/* ---------- before you start ---------- */
 
-.lengths { margin: 1.5rem 0 0; padding: 0; border: 0; max-width: 34rem; }
-.lengths legend { padding: 0; margin-bottom: .7rem; }
-.lengths-note { margin: .7rem 0 0; font-size: .88rem; color: var(--muted); }
-
-.modes { margin: 1.5rem 0 0; padding: 0; border: 0; display: grid; gap: .5rem; max-width: 34rem; }
-.modes legend { padding: 0; margin-bottom: .7rem; }
-
-.mode {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: .8rem;
-  padding: .9rem 1.1rem;
+/* One quiet block of label-and-control rows. Two bordered cards for a binary
+   choice, and a floated legend above a row of checkboxes, were both far more
+   furniture than the decisions needed. */
+.setup {
+  margin: 1.75rem 0 0;
   border: 1px solid var(--border);
-  border-radius: var(--r-sm);
+  border-radius: var(--r);
   background: var(--surface);
-  cursor: pointer;
-  transition: border-color .15s var(--ease), background .15s var(--ease);
+  padding: 1rem 1.15rem 1.1rem;
+  max-width: 34rem;
 }
-.mode:hover { border-color: var(--border-strong); }
-.mode input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.mode .bubble { margin-top: .15rem; }
-.mode input:checked ~ .bubble { border-color: var(--accent); }
-.mode input:checked ~ .bubble .bubble-fill { transform: scale(1); }
-.mode:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.mode input:focus-visible ~ .bubble { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-.mode-body { display: grid; gap: .15rem; }
-.mode-name { font-size: .97rem; font-weight: 570; letter-spacing: -.015em; }
-.mode-note { font-size: .91rem; line-height: 1.45; color: var(--muted); }
+.setup-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem 1rem;
+  flex-wrap: wrap;
+  padding: .5rem 0;
+}
+.setup-row + .setup-row { border-top: 1px solid var(--border); }
 
-.options { margin: 1.5rem 0 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; align-items: center; }
-.options legend { padding: 0; margin-bottom: .65rem; float: left; width: 100%; }
+.setup-label {
+  flex: none;
+  width: 4.5rem;
+  font-size: .9rem;
+  font-weight: 540;
+  color: var(--muted);
+}
+
+.setup-hint {
+  margin: 0 0 .35rem;
+  padding-left: 5.5rem;
+  font-size: .87rem;
+  line-height: 1.45;
+  color: var(--faint);
+}
+
+.setup-switches { display: flex; gap: 1.1rem; flex-wrap: wrap; }
+
+.setup .seg { margin-bottom: 0; }
+.setup .seg-btn { cursor: pointer; }
+.setup .count-row { margin-top: 0; }
+
+/* The segment is a label wrapping a hidden radio, so the ring has to be drawn
+   for it rather than on the input. */
+.setup .seg-btn:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (max-width: 32rem) {
+  .setup-label { width: 100%; }
+  .setup-hint { padding-left: 0; }
+  .setup-row { padding: .6rem 0; }
+}
+
+/* ---------- switches ---------- */
 
 .switch { display: inline-flex; align-items: center; gap: .5rem; cursor: pointer; font-size: .93rem; color: var(--muted); }
 .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
