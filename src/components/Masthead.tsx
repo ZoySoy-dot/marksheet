@@ -40,6 +40,7 @@ export default function Masthead() {
         <div className="masthead-right">
           <nav className="masthead-nav" aria-label="Main">
             <Link href="/">New sheet</Link>
+            <Link href="/ai">With AI</Link>
             <Link href="/mine">My sheets</Link>
           </nav>
           <button className="theme-toggle" type="button" onClick={flip}>

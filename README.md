@@ -73,6 +73,31 @@ so equations are readable by screen readers.
 
 ---
 
+## Writing a sheet with a chatbot
+
+`/ai` hands you a brief containing the whole format. Paste it into Claude, Gemini or ChatGPT along
+with your reviewer — they read PDFs, slides and photos of notes natively — and paste the reply into
+the editor.
+
+Marksheet does not call any model itself. There is no API key to manage, nothing to pay for, and no
+upload to parse, because the chatbot you already use does all three. The brief is built in
+`src/lib/aiPrompt.ts`; the question count is the only knob.
+
+The parser ignores code-fence lines, since chatbots wrap their answer in one however firmly the
+brief asks them not to.
+
+> A model will occasionally be confidently wrong about your material. Read what comes back before
+> publishing — a sheet that drills the wrong answer is worse than no sheet.
+
+### Why not a built-in generator?
+
+A Claude Pro or Gemini Advanced subscription cannot be linked to a third-party site; neither
+provider offers consumer-account OAuth for this. The alternatives were asking every user to set up
+pay-per-use API billing, or Marksheet paying per generated quiz. Copy-paste costs nothing, works
+with every chatbot, and gets file handling for free.
+
+---
+
 ## Running it locally
 
 ```bash

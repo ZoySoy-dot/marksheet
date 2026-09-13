@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Legend from "@/components/Legend";
 import QuizRunner from "@/components/QuizRunner";
@@ -235,9 +236,14 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
             <label className="rubric" htmlFor="source">
               Your questions
             </label>
-            <button className="link-btn" type="button" onClick={loadSample}>
-              Load a sample
-            </button>
+            <span className="field-head-links">
+              <Link className="link-btn" href="/ai">
+                Write it with AI
+              </Link>
+              <button className="link-btn" type="button" onClick={loadSample}>
+                Load a sample
+              </button>
+            </span>
           </div>
 
           <textarea

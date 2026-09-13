@@ -116,6 +116,20 @@ test("an empty sheet has no questions and no problems", () => {
   assert.equal(problems.length, 0);
 });
 
+test("ignores the code fences a chatbot wraps its answer in", () => {
+  const source = "```\nQ: Fenced?\n* yes\n- no\n```";
+  const { questions, problems } = parseSheet(source);
+  assert.equal(problems.length, 0);
+  assert.equal(questions.length, 1);
+  assert.equal(questions[0].text, "Fenced?");
+});
+
+test("ignores a labelled code fence too", () => {
+  const { problems, questions } = parseSheet("```text\nQ: Fenced?\n* yes\n- no\n```");
+  assert.equal(problems.length, 0);
+  assert.equal(questions.length, 1);
+});
+
 test("suggests a title from the first question", () => {
   const { questions } = parseSheet("Q: What is the capital of France?\n* Paris\n- Berlin");
   assert.equal(suggestTitle(questions), "What is the capital of France?");

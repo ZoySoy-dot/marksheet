@@ -521,6 +521,90 @@ kbd {
   outline-offset: 2px;
 }
 
+/* ---------- chatbot brief ---------- */
+
+.field-head-links {
+  display: inline-flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Numbered because it genuinely is a sequence: copy, paste, paste back. */
+.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 2.25rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1.1rem;
+  max-width: 40rem;
+}
+
+.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: .3rem .5rem;
+}
+
+.steps li::before {
+  content: counter(step, decimal-leading-zero);
+  grid-row: span 2;
+  font-family: var(--ff-mono);
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--dropout);
+  padding-top: .2rem;
+}
+
+.step-name {
+  margin: 0;
+  font-family: var(--ff-prose);
+  font-size: 1.1rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.step-note {
+  margin: 0;
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--graphite-2);
+}
+
+.count-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin-top: .3rem;
+}
+
+.count-btn {
+  font-family: var(--ff-mono);
+  font-size: .72rem;
+  letter-spacing: .06em;
+  color: var(--graphite-2);
+  background: var(--stock-2);
+  border: 1px solid var(--rule-firm);
+  border-radius: 999px;
+  padding: .4rem .9rem;
+  cursor: pointer;
+  transition: border-color .14s var(--ease), color .14s var(--ease), background .14s var(--ease);
+}
+.count-btn:hover { border-color: var(--graphite-3); color: var(--graphite); }
+.count-btn.is-picked {
+  background: var(--graphite);
+  border-color: var(--graphite);
+  color: var(--stock);
+}
+
+.prompt-box {
+  min-height: 18rem;
+  margin-top: .8rem;
+  font-size: .8rem;
+  line-height: 1.65;
+}
+
 /* ---------- mode picker ---------- */
 
 /* The same bubble the sheet is made of: a circle means pick one. */

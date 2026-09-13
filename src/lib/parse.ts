@@ -49,6 +49,12 @@ const RE_OPTION = /^[ \t]*([*\-])[ \t]*(\S.*?)[ \t]*$/;
 const RE_NOTE = /^[ \t]*>[ \t]*(\S.*?)[ \t]*$/;
 const RE_COMMENT = /^[ \t]*#/;
 const RE_BLANK = /^[ \t]*$/;
+/**
+ * Chatbots wrap their answer in a code fence however firmly you ask them not
+ * to. Dropping fence lines is friendlier than making someone hunt for the
+ * three backticks that broke their paste.
+ */
+const RE_FENCE = /^[ \t]*(?:```|~~~)[^\n]*$/;
 
 type Draft = {
   line: number;
@@ -136,7 +142,7 @@ export function parseSheet(input: string): ParseResult {
   lines.forEach((raw, i) => {
     const lineNo = i + 1;
 
-    if (RE_BLANK.test(raw) || RE_COMMENT.test(raw)) return;
+    if (RE_BLANK.test(raw) || RE_COMMENT.test(raw) || RE_FENCE.test(raw)) return;
 
     const q = raw.match(RE_QUESTION);
     if (q) {
