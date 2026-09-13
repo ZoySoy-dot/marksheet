@@ -245,7 +245,6 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 }
 .masthead-nav a:hover { color: var(--text); }
 
-.theme-toggle,
 .auth-btn {
   font-family: inherit;
   font-size: .875rem;
@@ -258,7 +257,6 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
   cursor: pointer;
   transition: border-color .15s var(--ease), color .15s var(--ease);
 }
-.theme-toggle:hover,
 .auth-btn:hover { color: var(--text); border-color: var(--border-strong); }
 
 .masthead-nav a[aria-current="page"] { color: var(--text); font-weight: 560; }
@@ -1784,23 +1782,6 @@ body > .ML__keyboard { z-index: 40; }
 
 .prompt-box { min-height: 16rem; margin-top: .75rem; font-size: .8rem; line-height: 1.65; }
 
-/* ---------- footer ---------- */
-
-.footer {
-  border-top: 1px solid var(--border);
-  padding: 1.5rem var(--gutter);
-  width: 100%;
-  max-width: 68rem;
-  margin: 0 auto;
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.footer p { margin: 0; font-size: .875rem; color: var(--faint); }
-
 /* ---------- narrow ---------- */
 
 @media (max-width: 32rem) {
@@ -1825,6 +1806,50 @@ body > .ML__keyboard { z-index: 40; }
   .link-btn { padding: .35rem 0; }
   .mine-links { gap: 1.25rem; }
   .icon-btn { width: 34px; height: 34px; }
+}
+
+/* Keyboard shortcuts are advice for people who have a keyboard. */
+@media (pointer: coarse) {
+  .keyhint { display: none; }
+}
+
+/* ---------- answering on a phone ---------- */
+
+/*
+ * A question and its options should fit in one screen, because scrolling
+ * between reading and answering is the slow part on a phone. These rules come
+ * after the narrow block above so they win on equal specificity.
+ */
+@media (max-width: 32rem) {
+  .qcard { margin-top: 1.1rem; }
+  .qtype { margin-bottom: .6rem; padding: .15rem .6rem; font-size: .75rem; }
+  .qtext { font-size: 1.12rem; line-height: 1.3; margin-bottom: 1rem; }
+  .opts { gap: .4rem; }
+  .opt { padding: .7rem .85rem; gap: .65rem; }
+  .opt-text { font-size: .95rem; }
+  .note { margin-top: .8rem; }
+
+  /* Next rides along the bottom, so answering stays tap, tap, rather than
+     tap, scroll, hunt, tap. */
+  .actions-quiz {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin-top: 1rem;
+    padding: .6rem 0 calc(.6rem + env(safe-area-inset-bottom, 0px));
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    flex-wrap: nowrap;
+  }
+  /* Full width each would stack them, and two rows of buttons is more
+     scrolling, which is the thing being removed. */
+  .actions-quiz .btn { flex: 1 1 auto; min-height: 44px; }
+  .actions-quiz .btn-primary { flex: 2 1 auto; }
+
+  /* The screen before the quiz carried desktop spacing into a phone. */
+  .ready-meta { gap: 1rem; margin-top: .8rem; }
+  .byline { margin-top: .6rem; }
+  .setup { margin-top: 1rem; }
 }
 
 /* ---------- math ---------- */
