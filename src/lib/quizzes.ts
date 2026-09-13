@@ -11,6 +11,8 @@ export type QuizRecord = {
   questionCount: number;
   /** Google account id, or null for a quiz published without signing in. */
   ownerId: string | null;
+  ownerName: string | null;
+  ownerImage: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -23,6 +25,8 @@ type Row = {
   questions: Question[];
   question_count: number;
   owner_id: string | null;
+  owner_name: string | null;
+  owner_image: string | null;
   created_at: string | Date;
   updated_at: string | Date;
 };
@@ -39,6 +43,8 @@ function toRecord(row: Row): QuizRecord {
     questions: row.questions,
     questionCount: Number(row.question_count),
     ownerId: row.owner_id ?? null,
+    ownerName: row.owner_name?.trim() || null,
+    ownerImage: row.owner_image?.trim() || null,
     createdAt: asIso(row.created_at),
     updatedAt: asIso(row.updated_at),
   };
@@ -48,7 +54,8 @@ export async function getQuizBySlug(slug: string): Promise<QuizRecord | null> {
   if (!SLUG_PATTERN.test(slug)) return null;
   const sql = getSql();
   const rows = (await sql`
-    select id, slug, title, source, questions, question_count, owner_id, created_at, updated_at
+    select id, slug, title, source, questions, question_count,
+           owner_id, owner_name, owner_image, created_at, updated_at
     from quizzes
     where slug = ${slug}
     limit 1

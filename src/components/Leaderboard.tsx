@@ -1,4 +1,5 @@
 import type { ActiveRunner, LeaderboardEntry } from "@/lib/quizzes";
+import Face from "@/components/Face";
 import { formatDuration } from "@/lib/scoring";
 
 type Props = {
@@ -15,28 +16,6 @@ type Props = {
  * the tallest block, which is the only reason a podium is worth drawing.
  */
 const PODIUM_ORDER = [1, 0, 2] as const;
-
-/**
- * The initial shows underneath, so a picture that fails to load or is blocked
- * degrades to something readable instead of a broken image.
- */
-function Face({ name, image, size }: { name: string; image: string | null; size: number }) {
-  return (
-    <span
-      className="face"
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.4) }}
-    >
-      <span className="face-initial" aria-hidden="true">
-        {name.charAt(0).toUpperCase()}
-      </span>
-      {image ? (
-        // Google's avatar, served from their CDN.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className="face-img" src={image} alt="" width={size} height={size} loading="lazy" />
-      ) : null}
-    </span>
-  );
-}
 
 /**
  * Best run per person. Anyone who took the quiz without an account still gets

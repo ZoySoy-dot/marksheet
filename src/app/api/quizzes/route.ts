@@ -1,4 +1,4 @@
-import { currentUserId } from "@/auth";
+import { currentUser } from "@/auth";
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
 import { getSql } from "@/lib/db";
@@ -45,7 +45,8 @@ export async function POST(request: Request) {
 
     // Signing in is optional. Without an account the sheet is still published,
     // and the edit token is the only way back into it.
-    const userId = await currentUserId();
+    const me = await currentUser();
+    const userId = me?.id ?? null;
 
     const title = (rawTitle || suggestTitle(questions)).slice(0, MAX_TITLE);
     const sql = getSql();
@@ -55,11 +56,13 @@ export async function POST(request: Request) {
       const editToken = makeEditToken();
       try {
         await sql`
-          insert into quizzes (slug, edit_token, owner_id, title, source, questions, question_count)
+          insert into quizzes (slug, edit_token, owner_id, owner_name, owner_image, title, source, questions, question_count)
           values (
             ${slug},
             ${editToken},
             ${userId},
+            ${me?.name ?? null},
+            ${me?.image ?? null},
             ${title},
             ${source},
             ${JSON.stringify(questions)}::jsonb,

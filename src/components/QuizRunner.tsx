@@ -84,6 +84,8 @@ type Props = {
   savedRun?: SavedRun | null;
   /** History and trouble spots. Report screen only. */
   report?: React.ReactNode;
+  /** Who wrote it. Sits under the title on the ready screen. */
+  byline?: React.ReactNode;
 };
 
 export default function QuizRunner({
@@ -97,6 +99,7 @@ export default function QuizRunner({
   aside,
   savedRun,
   report,
+  byline,
 }: Props) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("ready");
@@ -451,6 +454,8 @@ export default function QuizRunner({
         <h1 className="display display-md ready-title">
           <TeX>{title}</TeX>
         </h1>
+
+        {byline}
 
         <div className="ready-meta">
           <p className="figure">

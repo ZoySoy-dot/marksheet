@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { currentUserId } from "@/auth";
 import { notFound } from "next/navigation";
+import Face from "@/components/Face";
 import Leaderboard from "@/components/Leaderboard";
 import RunHistory, { type TroubleQuestion } from "@/components/RunHistory";
 import QuizRunner from "@/components/QuizRunner";
@@ -90,6 +91,14 @@ export default async function QuizPage({ params }: Props) {
           }
           savedRun={savedRun}
           report={<RunHistory runs={runs} trouble={trouble} signedIn={Boolean(userId)} />}
+          byline={
+            quiz.ownerName ? (
+              <p className="byline">
+                <Face name={quiz.ownerName} image={quiz.ownerImage} size={24} />
+                Made by {quiz.ownerName}
+              </p>
+            ) : null
+          }
         />
       </div>
     );

@@ -1064,6 +1064,15 @@ body > .ML__keyboard { z-index: 40; }
 /* ---------- drill ---------- */
 
 .ready-title { margin: .5rem 0 0; }
+
+.byline {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: .8rem 0 0;
+  font-size: .93rem;
+  color: var(--muted);
+}
 .ready-meta { margin: 1rem 0 0; display: flex; flex-wrap: wrap; gap: 1.5rem; }
 .ready-note { margin: .8rem 0 0; font-size: .9rem; color: var(--muted); }
 

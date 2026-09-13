@@ -1,4 +1,4 @@
-import { currentUserId } from "@/auth";
+import { currentUser } from "@/auth";
 import { NextResponse } from "next/server";
 import { apiError, tokensMatch } from "@/lib/api";
 import { getSql } from "@/lib/db";
@@ -21,7 +21,8 @@ export async function POST(request: Request, { params }: Context) {
       return NextResponse.json({ error: "No sheet with that link." }, { status: 404 });
     }
 
-    const userId = await currentUserId();
+    const me = await currentUser();
+    const userId = me?.id ?? null;
     if (!userId) {
       return NextResponse.json({ error: "Sign in first to keep a sheet." }, { status: 401 });
     }
@@ -45,7 +46,11 @@ export async function POST(request: Request, { params }: Context) {
       return NextResponse.json({ error: "That edit key is not valid for this sheet." }, { status: 403 });
     }
 
-    await sql`update quizzes set owner_id = ${userId}, updated_at = now() where id = ${row.id}`;
+    await sql`
+      update quizzes
+      set owner_id = ${userId}, owner_name = ${me!.name}, owner_image = ${me!.image}, updated_at = now()
+      where id = ${row.id}
+    `;
     return NextResponse.json({ claimed: true });
   } catch (error) {
     return apiError(error);
