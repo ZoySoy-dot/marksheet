@@ -7,16 +7,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --experimental-strip-types --test scripts/parse.test.ts scripts/tex.test.ts",
+    "test": "node --experimental-strip-types --test scripts/parse.test.ts scripts/tex.test.ts scripts/serialize.test.ts scripts/scheduling.test.ts scripts/mine.test.ts scripts/mathfield.test.ts scripts/normalise.test.ts",
     "db:init": "node --env-file=.env.local scripts/init-db.mjs"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.9.2",
     "@neondatabase/serverless": "^1.0.1",
     "katex": "^0.18.7",
+    "mathlive": "^0.110.0",
     "next": "^15.5.4",
+    "next-auth": "^5.0.0-beta.32",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "ts-fsrs": "^5.4.2"
   },
   "devDependencies": {
     "@types/katex": "^0.16.8",

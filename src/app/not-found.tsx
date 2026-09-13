@@ -10,11 +10,11 @@ export default function NotFound() {
         on the way over.
       </p>
       <div className="actions">
-        <Link className="btn btn-primary" href="/">
-          Make a new sheet
+        <Link className="btn btn-primary" href="/new">
+          Make a quiz
         </Link>
-        <Link className="btn btn-quiet" href="/mine">
-          My sheets
+        <Link className="btn btn-quiet" href="/quizzes">
+          Quizzes
         </Link>
       </div>
     </div>

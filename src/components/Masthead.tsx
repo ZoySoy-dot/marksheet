@@ -1,33 +1,34 @@
 "use client";
 
-import { Show, SignInButton, UserButton } from "@clerk/nextjs";
+import UserMenu from "@/components/UserMenu";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+const NAV = [
+  { href: "/quizzes", label: "Quizzes" },
+  { href: "/ai", label: "Use AI" },
+];
 
 export default function Masthead() {
-  const [theme, setTheme] = useState<Theme | null>(null);
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Following a link should put the menu away.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("marksheet.theme");
-    if (stored === "dark" || stored === "light") {
-      setTheme(stored);
-      return;
-    }
-    setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-  }, []);
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
-  const flip = () => {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("marksheet.theme", next);
-    } catch {
-      /* private browsing, so the choice just will not stick */
-    }
-  };
+  const current = (href: string) => (pathname === href ? "page" : undefined);
 
   return (
     <header className="masthead">
@@ -37,28 +38,55 @@ export default function Masthead() {
           <span className="brand-name">Marksheet</span>
         </Link>
 
+        {/* Wide screens: everything on one line. */}
         <div className="masthead-right">
           <nav className="masthead-nav" aria-label="Main">
-            <Link href="/">New sheet</Link>
-            <Link href="/ai">With AI</Link>
-            <Link href="/mine">My sheets</Link>
+            {NAV.map((item) => (
+              <Link key={item.href} href={item.href} aria-current={current(item.href)}>
+                {item.label}
+              </Link>
+            ))}
           </nav>
-          <button className="theme-toggle" type="button" onClick={flip}>
-            {theme === "dark" ? "Light" : "Dark"}
-            <span className="sr-only"> theme</span>
-          </button>
-
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <button className="auth-btn" type="button">
-                Sign in
-              </button>
-            </SignInButton>
-          </Show>
-          <Show when="signed-in">
-            <UserButton />
-          </Show>
+          <UserMenu />
         </div>
+
+        {/* Narrow screens: the avatar stays reachable, the rest folds away. */}
+        <div className="masthead-compact">
+          <UserMenu compact />
+          <button
+            className="nav-toggle"
+            type="button"
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            onClick={() => setOpen((value) => !value)}
+          >
+            <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+              <path
+                d={open ? "M5 5l10 10M15 5L5 15" : "M3 6h14M3 10h14M3 14h14"}
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div className="nav-panel" id="mobile-nav" hidden={!open}>
+        <nav aria-label="Main">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              className="nav-panel-link"
+              href={item.href}
+              aria-current={current(item.href)}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </header>
   );
