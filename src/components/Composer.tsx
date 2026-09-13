@@ -20,7 +20,7 @@ type Props = {
   initialSource?: string;
 };
 
-type Published = { slug: string; url: string };
+type Published = { slug: string; url: string; owned: boolean };
 
 export default function Composer({ mode, slug, editToken, initialTitle, initialSource }: Props) {
   const router = useRouter();
@@ -99,7 +99,11 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
         questionCount: data.questionCount,
         createdAt: new Date().toISOString(),
       });
-      setPublished({ slug: data.slug, url: `${window.location.origin}/q/${data.slug}` });
+      setPublished({
+        slug: data.slug,
+        url: `${window.location.origin}/q/${data.slug}`,
+        owned: Boolean(data.owned),
+      });
       try {
         localStorage.removeItem(DRAFT_KEY);
       } catch {
@@ -333,8 +337,18 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
                 </a>
               </div>
               <p className="share-note">
-                Anyone with this link can take the sheet. Keep editing it from{" "}
-                <a href="/mine">My sheets</a> on this device.
+                Anyone with this link can take the sheet.{" "}
+                {published.owned ? (
+                  <>
+                    It is saved to your account, so you can edit it from{" "}
+                    <a href="/mine">My sheets</a> on any browser you sign in from.
+                  </>
+                ) : (
+                  <>
+                    You published it without signing in, so only this browser can edit it. Sign in
+                    and open <a href="/mine">My sheets</a> to keep it for good.
+                  </>
+                )}
               </p>
             </div>
           ) : null}

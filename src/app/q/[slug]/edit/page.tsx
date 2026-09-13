@@ -1,5 +1,6 @@
 "use client";
 
+import { SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -20,13 +21,9 @@ export default function EditPage() {
   useEffect(() => {
     if (!slug) return;
 
+    // An edit link carries the key; otherwise this browser may still remember it.
     const fromUrl = new URLSearchParams(window.location.search).get("t") ?? "";
     const editToken = fromUrl || findSheet(slug)?.editToken || "";
-    if (!editToken) {
-      setStatus("no-token");
-      return;
-    }
-    setToken(editToken);
 
     let cancelled = false;
     fetch(`/api/quizzes/${slug}`)
@@ -38,6 +35,15 @@ export default function EditPage() {
           return;
         }
         if (!response.ok) throw new Error(data.error ?? "Could not load this sheet.");
+
+        // Owning the sheet is enough. The token is the fallback for sheets
+        // published without an account.
+        if (!data.isOwner && !editToken) {
+          setStatus("no-token");
+          return;
+        }
+
+        setToken(editToken);
         setLoaded({ title: data.title, source: data.source });
         setStatus("ready");
       })
@@ -76,15 +82,17 @@ export default function EditPage() {
     return (
       <div className="screen screen-narrow">
         <p className="rubric">Cannot edit here</p>
-        <h1 className="display display-md">No edit key</h1>
+        <h1 className="display display-md">Not yours to edit</h1>
         <p className="deck">
-          Marksheet has no accounts. A sheet can only be edited from the browser that published it,
-          or through an edit link that carries the key.
+          A sheet can be edited by the account that published it, from the browser that published
+          it, or through an edit link that carries the key.
         </p>
         <div className="actions">
-          <Link className="btn btn-primary" href="/mine">
-            My sheets
-          </Link>
+          <SignInButton mode="modal">
+            <button className="btn btn-primary" type="button">
+              Sign in
+            </button>
+          </SignInButton>
           <Link className="btn btn-quiet" href={`/q/${slug}`}>
             Take this sheet instead
           </Link>

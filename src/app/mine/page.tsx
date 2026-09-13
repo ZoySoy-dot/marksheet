@@ -1,81 +1,26 @@
-"use client";
+import type { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
+import MineList from "@/components/MineList";
+import SetupNotice from "@/components/SetupNotice";
+import { DatabaseNotConfiguredError } from "@/lib/db";
+import { listSheetsByOwner, type OwnedSheet } from "@/lib/quizzes";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import TeX from "@/components/TeX";
-import { readMine, type SavedSheet } from "@/lib/mine";
+export const dynamic = "force-dynamic";
 
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-}
+export const metadata: Metadata = { title: "My sheets" };
 
-export default function MinePage() {
-  const [sheets, setSheets] = useState<SavedSheet[] | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
+export default async function MinePage() {
+  const { userId } = await auth();
 
-  useEffect(() => {
-    setSheets(readMine());
-  }, []);
-
-  const copyLink = async (slug: string) => {
-    const url = `${window.location.origin}/q/${slug}`;
+  let sheets: OwnedSheet[] = [];
+  if (userId) {
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(slug);
-      setTimeout(() => setCopied(null), 2000);
-    } catch {
-      window.prompt("Copy this link", url);
+      sheets = await listSheetsByOwner(userId);
+    } catch (error) {
+      if (error instanceof DatabaseNotConfiguredError) return <SetupNotice />;
+      throw error;
     }
-  };
+  }
 
-  return (
-    <div className="screen screen-narrow">
-      <p className="rubric">On this device</p>
-      <h1 className="display display-md">My sheets</h1>
-      <p className="deck">
-        Sheets you published from this browser. The edit keys live here, so this list does not follow
-        you to another device.
-      </p>
-
-      {sheets === null ? null : sheets.length === 0 ? (
-        <div className="empty">
-          <p>No sheets published from this browser yet.</p>
-          <Link className="btn btn-primary" href="/">
-            Make your first sheet
-          </Link>
-        </div>
-      ) : (
-        <ul className="mine-list">
-          {sheets.map((sheet) => (
-            <li key={sheet.slug} className="mine-item">
-              <div>
-                <p className="mine-title">
-                  <Link href={`/q/${sheet.slug}`}>
-                    <TeX>{sheet.title}</TeX>
-                  </Link>
-                </p>
-                <p className="mine-meta">
-                  {sheet.questionCount} question{sheet.questionCount === 1 ? "" : "s"}
-                  {sheet.createdAt ? ` · ${formatDate(sheet.createdAt)}` : ""}
-                </p>
-              </div>
-              <div className="mine-links">
-                <Link className="link-btn" href={`/q/${sheet.slug}`}>
-                  Take it
-                </Link>
-                <Link className="link-btn" href={`/q/${sheet.slug}/edit?t=${sheet.editToken}`}>
-                  Edit
-                </Link>
-                <button className="link-btn" type="button" onClick={() => copyLink(sheet.slug)}>
-                  {copied === sheet.slug ? "Copied" : "Copy link"}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+  return <MineList signedIn={Boolean(userId)} sheets={sheets} />;
 }

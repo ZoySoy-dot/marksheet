@@ -5,7 +5,7 @@ Paste your questions as plain text. Get an interactive quiz you can share with a
 Built as an OMR answer sheet: circles mean pick one, squares mean pick all that apply, and the
 form's own chrome is printed in "drop-out" cyan — the ink a scanner cannot see.
 
-- **Stack** — Next.js 15 (App Router), React 19, TypeScript, Neon Postgres
+- **Stack** — Next.js 15 (App Router), React 19, TypeScript, Neon Postgres, Clerk auth, KaTeX
 - **Hosting** — Vercel
 
 ---
@@ -77,15 +77,21 @@ so equations are readable by screen readers.
 
 ```bash
 npm install
-cp .env.example .env.local     # then paste your Neon connection string in
+cp .env.example .env.local     # then fill in Neon and Clerk keys
 npm run db:init                # creates the tables, safe to re-run
-npm run dev
+npm run dev                    # http://localhost:3000
+npm test                       # format and LaTeX contract tests
 ```
 
-Open <http://localhost:3000>.
+Three keys are needed: `DATABASE_URL` from Neon, and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` plus
+`CLERK_SECRET_KEY` from the Clerk dashboard.
 
 Without `DATABASE_URL` the editor and **Practise without saving** still work — only publishing and
 sharing need the database.
+
+> On Windows, do not pipe secrets into `vercel env add` from PowerShell. It prepends a UTF-8 BOM,
+> which silently corrupts the value and makes Clerk reject the key at the edge. Redirect from a
+> file instead: `vercel env add NAME production < key.txt`.
 
 ### Getting a Neon connection string
 
@@ -100,24 +106,47 @@ Either:
 
 ## Deploying
 
-Push to GitHub, import the repo at <https://vercel.com/new>, and set `DATABASE_URL` under
-Project Settings → Environment Variables. Then run `npm run db:init` once against that database.
+Push to GitHub and import the repo at <https://vercel.com/new>. Set `DATABASE_URL`,
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` under Project Settings → Environment
+Variables, then run `npm run db:init` once against that database.
+
+Neon can be provisioned straight from the CLI, which sets `DATABASE_URL` across all three
+environments and connects it to the project:
+
+```bash
+vercel integration add neon
+vercel env pull .env.local
+npm run db:init
+```
 
 ---
 
-## How sharing works
+## Accounts and sharing
 
-There are no accounts.
+Accounts are [Clerk](https://clerk.com). Signing in is optional — it decides where a sheet lives,
+not whether you can use the app.
 
-- Publishing returns a **slug** (`/q/ab3k9x2m`) and a secret **edit token**.
-- The slug is the share link. Anyone with it can take the sheet.
-- The edit token is stored in `localStorage` under `marksheet.mine` and is the only proof you wrote
-  the sheet. It is required to edit or delete. Clearing this browser's storage means losing the
-  ability to edit — the share link keeps working.
-- `/mine` lists the sheets published from the current browser, with edit links that carry the token.
+**Taking a sheet never needs an account.** Share links, the take page and the attempts endpoint are
+open to everyone. `clerkMiddleware()` reads the session onto each request and protects no routes;
+ownership is enforced per-route instead.
 
-Finished runs are recorded anonymously in `attempts` (score and total only, no answers, no
-identifiers) to back the "taken N times" line on a sheet.
+**Publishing signed in** stores your Clerk user id on the sheet. It shows up under `/mine` from any
+browser you sign in from, and you can edit it without holding any key.
+
+**Publishing signed out** still works. The sheet gets a secret **edit token**, kept in
+`localStorage` under `marksheet.mine`, which is then the only proof you wrote it. Clear that
+browser's storage and you lose the ability to edit — the share link keeps working.
+
+**Claiming.** Signed in, `/mine` offers to move any sheets this browser published into your account.
+`POST /api/quizzes/<slug>/claim` takes the edit token as proof and only works on a sheet that has no
+owner yet.
+
+**Editing** is allowed if either test passes: you are signed in as the owner, or you hold the edit
+token. Keeping the token path alive on an owned sheet is what makes `/q/<slug>/edit?t=<token>` a
+shareable link for someone helping you write it.
+
+Finished runs are recorded anonymously in `attempts` (score and total only — no answers, no user
+id) to back the "taken N times" line on a sheet.
 
 ### A note on grading
 
@@ -132,27 +161,31 @@ for anything that gets a grade.
 
 ```
 src/
+  middleware.ts                       clerkMiddleware, protects nothing on purpose
   app/
     page.tsx                          the editor
-    mine/page.tsx                     sheets published from this browser
+    mine/page.tsx                     your sheets (server-rendered from the account)
     q/[slug]/page.tsx                 take a sheet
-    q/[slug]/edit/page.tsx            edit a sheet you wrote
+    q/[slug]/edit/page.tsx            edit a sheet you own or hold the key for
     api/quizzes/route.ts              POST   publish
     api/quizzes/[slug]/route.ts       GET / PATCH / DELETE
     api/quizzes/[slug]/attempts/      POST   record a finished run
+    api/quizzes/[slug]/claim/         POST   move an ownerless sheet into your account
     globals.css                       the whole design system
   components/
     Composer.tsx                      editor, live parse readout, publish
     QuizRunner.tsx                    ready → running → report
+    MineList.tsx                      owned sheets, local sheets, claiming
     TeX.tsx                           renders $…$ and $$…$$ safely
     Legend.tsx, Masthead.tsx, SetupNotice.tsx
   lib/
     parse.ts                          the format, and its error messages
     tex.ts                            math splitting, rendering, validation
-    quizzes.ts                        reads
+    quizzes.ts                        reads, including listSheetsByOwner
     db.ts, ids.ts, api.ts, mine.ts, sample.ts
-db/schema.sql                         tables
+db/schema.sql                         tables, safe to re-run
 scripts/init-db.mjs                   applies schema.sql
+scripts/*.test.ts                     format and LaTeX contract tests
 ```
 
 ## Keyboard

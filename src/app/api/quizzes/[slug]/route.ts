@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { apiError, tokensMatch } from "@/lib/api";
 import { getSql } from "@/lib/db";
@@ -13,16 +14,39 @@ const MAX_SOURCE = 200_000;
 const MAX_TITLE = 140;
 
 type Context = { params: Promise<{ slug: string }> };
+type OwnerRow = { id: number; edit_token: string; owner_id: string | null };
 
 const missing = () => NextResponse.json({ error: "No sheet with that link." }, { status: 404 });
 const forbidden = () =>
-  NextResponse.json({ error: "That edit link is not valid for this sheet." }, { status: 403 });
+  NextResponse.json({ error: "That sheet belongs to someone else." }, { status: 403 });
+
+/**
+ * Two ways in: you are signed in as the owner, or you hold the edit token.
+ * The token still works on an owned sheet, which is what makes an edit link
+ * shareable with someone helping you write it.
+ */
+async function mayEdit(row: OwnerRow, editToken: unknown): Promise<boolean> {
+  const { userId } = await auth();
+  if (row.owner_id && userId && row.owner_id === userId) return true;
+  return tokensMatch(editToken, row.edit_token);
+}
+
+async function loadOwnerRow(slug: string): Promise<OwnerRow | undefined> {
+  const sql = getSql();
+  const rows = (await sql`
+    select id, edit_token, owner_id from quizzes where slug = ${slug} limit 1
+  `) as OwnerRow[];
+  return rows[0];
+}
 
 export async function GET(_request: Request, { params }: Context) {
   try {
     const { slug } = await params;
     const quiz = await getQuizBySlug(slug);
     if (!quiz) return missing();
+
+    const { userId } = await auth();
+
     return NextResponse.json({
       slug: quiz.slug,
       title: quiz.title,
@@ -30,6 +54,9 @@ export async function GET(_request: Request, { params }: Context) {
       questions: quiz.questions,
       questionCount: quiz.questionCount,
       createdAt: quiz.createdAt,
+      /** Lets the edit page skip asking for a token when you already own this. */
+      isOwner: Boolean(quiz.ownerId && userId && quiz.ownerId === userId),
+      hasOwner: Boolean(quiz.ownerId),
     });
   } catch (error) {
     return apiError(error);
@@ -56,13 +83,9 @@ export async function PATCH(request: Request, { params }: Context) {
       );
     }
 
-    const sql = getSql();
-    const rows = (await sql`
-      select id, edit_token from quizzes where slug = ${slug} limit 1
-    `) as { id: number; edit_token: string }[];
-    const row = rows[0];
+    const row = await loadOwnerRow(slug);
     if (!row) return missing();
-    if (!tokensMatch(body.editToken, row.edit_token)) return forbidden();
+    if (!(await mayEdit(row, body.editToken))) return forbidden();
 
     const parsed = parseSheet(source);
     const questions = parsed.questions;
@@ -82,6 +105,7 @@ export async function PATCH(request: Request, { params }: Context) {
     }
 
     const title = (rawTitle || suggestTitle(questions)).slice(0, MAX_TITLE);
+    const sql = getSql();
 
     await sql`
       update quizzes
@@ -106,14 +130,11 @@ export async function DELETE(request: Request, { params }: Context) {
 
     const body = (await request.json().catch(() => ({}))) as { editToken?: unknown };
 
-    const sql = getSql();
-    const rows = (await sql`
-      select id, edit_token from quizzes where slug = ${slug} limit 1
-    `) as { id: number; edit_token: string }[];
-    const row = rows[0];
+    const row = await loadOwnerRow(slug);
     if (!row) return missing();
-    if (!tokensMatch(body.editToken, row.edit_token)) return forbidden();
+    if (!(await mayEdit(row, body.editToken))) return forbidden();
 
+    const sql = getSql();
     await sql`delete from quizzes where id = ${row.id}`;
     return NextResponse.json({ deleted: true });
   } catch (error) {
