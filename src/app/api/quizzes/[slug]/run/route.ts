@@ -38,6 +38,7 @@ export async function POST(request: Request, { params }: Context) {
     const body = (await request.json().catch(() => ({}))) as {
       orderKeys?: unknown;
       picks?: unknown;
+      written?: unknown;
       revealed?: unknown;
       timings?: unknown;
       position?: unknown;
@@ -66,10 +67,11 @@ export async function POST(request: Request, { params }: Context) {
       JSON.stringify(value && typeof value === "object" ? value : {});
 
     await sql`
-      insert into runs (user_id, quiz_id, display_name, image_url, order_keys, picks, revealed, timings, position, mode, last_seen_at, finished_at)
+      insert into runs (user_id, quiz_id, display_name, image_url, order_keys, picks, written, revealed, timings, position, mode, last_seen_at, finished_at)
       values (
         ${userId}, ${quizId}, ${displayName}, ${me.image}, ${orderKeys},
-        ${asJson(body.picks)}::jsonb, ${asJson(body.revealed)}::jsonb, ${asJson(body.timings)}::jsonb,
+        ${asJson(body.picks)}::jsonb, ${asJson(body.written)}::jsonb,
+        ${asJson(body.revealed)}::jsonb, ${asJson(body.timings)}::jsonb,
         ${position}, ${mode}, now(), null
       )
       on conflict (user_id, quiz_id) do update set
@@ -77,6 +79,7 @@ export async function POST(request: Request, { params }: Context) {
         image_url    = excluded.image_url,
         order_keys   = excluded.order_keys,
         picks        = excluded.picks,
+        written      = excluded.written,
         revealed     = excluded.revealed,
         timings      = excluded.timings,
         position     = excluded.position,

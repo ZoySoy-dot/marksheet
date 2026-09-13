@@ -30,6 +30,7 @@ FORMAT
 Q: the question
 * a correct answer
 - a wrong answer
+= an answer they have to type out, instead of * and - lines
 > an optional explanation, shown after the person answers
 > repeat the > line for a second paragraph, a worked step, a caveat
 
@@ -41,6 +42,11 @@ RULES
 - Exactly one "*" makes it a pick-one question.
 - Two or more "*" makes it pick-all-that-apply. Use this where the material genuinely supports it.
 - Never mark every answer correct. Every question needs at least one "-".
+- A question written with "=" is typed rather than chosen. The person types their answer and it is marked against the "=" lines.
+- A typed question must not also carry "*" or "-" lines. It is one or the other.
+- Repeat "=" for every wording you will accept. Capitals and spacing are already forgiven, so "=" lines are for genuinely different answers: an abbreviation, a synonym, a second correct form of an expression.
+- Use a typed question where recalling the answer is the point and it is short and unambiguous: a term, a number, a formula, a date. Use choices everywhere else.
+- Nothing is equivalent unless you list it. "$2x$" will not accept "$x+x$" on its own.
 - Lines starting with ">" are the explanation, shown after the person answers. This is where the teaching happens, so do not be stingy with it.
 - Use as many ">" lines as the explanation needs. Each one becomes its own line. Walk through the working, name the trap the wrong answers set, add the rule or formula worth memorising. Two to five lines is normal for anything with reasoning in it.
 - One thing per ">" line. Do not cram a whole derivation onto one line.
@@ -80,6 +86,16 @@ Q: Which of these series converge?
 > A $p$-series $sum 1/n^p$ converges exactly when $p > 1$.
 > So $1/n^2$ converges and $1/n$ does not, even though both shrink to zero.
 > $sum 1/2^n$ is geometric with ratio $1/2$, so it converges to 1.
+
+Q: What is the derivative of $x^2$ with respect to $x$?
+= $2x$
+= 2x
+> Bring the power down and subtract one from it: $2x^{2-1} = 2x$.
+> This is the power rule, and it is worth knowing cold.
+
+Q: What name is given to the pigment that makes leaves green?
+= chlorophyll
+> It absorbs red and blue light and reflects green, which is why leaves look green.
 
 My material follows.`;
 }

@@ -7,6 +7,9 @@ import { cardKeysFor } from "@/lib/cardKey";
 import type { Question } from "@/lib/parse";
 import type { SavedRun } from "@/lib/quizzes";
 import { gradeAnswer } from "@/lib/scheduling";
+import MathField from "@/components/MathField";
+import MathKeyboardToggle from "@/components/MathKeyboardToggle";
+import { matchesAnswer } from "@/lib/answer";
 import { formatDuration, pointsForGrade, scorePercent } from "@/lib/scoring";
 
 type Phase = "ready" | "running" | "report";
@@ -53,18 +56,32 @@ function shuffle<T>(list: readonly T[]): T[] {
   return out;
 }
 
-function isRight(question: Question, picked: readonly string[]): boolean {
+/** Questions published before typed answers existed carry no kind at all. */
+const isTypedQuestion = (question: Question): boolean => question.kind === "typed";
+
+function isRight(question: Question, picked: readonly string[], written: string): boolean {
+  if (isTypedQuestion(question)) return matchesAnswer(written, question.accept ?? []);
   const correct = question.options.filter((o) => o.correct);
   if (correct.length !== picked.length) return false;
   const set = new Set(picked);
   return correct.every((o) => set.has(o.id));
 }
 
-const pickedTexts = (question: Question, ids: readonly string[]) =>
-  question.options.filter((o) => ids.includes(o.id)).map((o) => o.text);
+/** Whether they have committed to anything yet, typed or marked. */
+const hasAnswered = (question: Question, picked: readonly string[], written: string): boolean =>
+  isTypedQuestion(question) ? written.trim().length > 0 : picked.length > 0;
+
+const pickedTexts = (question: Question, ids: readonly string[], written: string) =>
+  isTypedQuestion(question)
+    ? written.trim()
+      ? [written]
+      : []
+    : question.options.filter((o) => ids.includes(o.id)).map((o) => o.text);
 
 const correctTexts = (question: Question) =>
-  question.options.filter((o) => o.correct).map((o) => o.text);
+  isTypedQuestion(question)
+    ? (question.accept ?? [])
+    : question.options.filter((o) => o.correct).map((o) => o.text);
 
 type Props = {
   title: string;
@@ -107,6 +124,8 @@ export default function QuizRunner({
   const [deck, setDeck] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [picks, setPicks] = useState<Record<string, string[]>>({});
+  /** What they typed, for questions that are answered rather than chosen. */
+  const [written, setWritten] = useState<Record<string, string>>({});
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [timings, setTimings] = useState<Record<string, number>>({});
   const posted = useRef(false);
@@ -169,6 +188,7 @@ export default function QuizRunner({
     setDeck(list);
     setIndex(0);
     setPicks({});
+    setWritten({});
     setRevealed({});
     setPhase("running");
   }, []);
@@ -213,6 +233,7 @@ export default function QuizRunner({
     if (list.length === 0) return;
 
     const restoredPicks: Record<string, string[]> = {};
+    const restoredWritten: Record<string, string> = {};
     const restoredRevealed: Record<string, boolean> = {};
     const restoredTimings: Record<string, number> = {};
 
@@ -225,6 +246,8 @@ export default function QuizRunner({
           .filter((i) => Number.isInteger(i) && i >= 0 && i < question.options.length)
           .map((i) => `${question.id}o${i}`);
       }
+      const typedBack = savedRun.written[key];
+      if (typeof typedBack === "string") restoredWritten[question.id] = typedBack;
       if (savedRun.revealed[key]) restoredRevealed[question.id] = true;
       const spent = savedRun.timings[key];
       if (typeof spent === "number" && spent >= 0) restoredTimings[question.id] = spent;
@@ -237,6 +260,7 @@ export default function QuizRunner({
     setDeck(list);
     setIndex(Math.min(Math.max(0, savedRun.position), list.length - 1));
     setPicks(restoredPicks);
+    setWritten(restoredWritten);
     setRevealed(restoredRevealed);
     setPhase("running");
   }, [savedRun, questionByKey, keyByQuestion]);
@@ -263,6 +287,13 @@ export default function QuizRunner({
                 return [[key, (picks[question.id] ?? []).map(optionIndex)]];
               }),
             ),
+            written: Object.fromEntries(
+              deck.flatMap((question) => {
+                const key = keyByQuestion.get(question.id);
+                const value = written[question.id];
+                return key && typeof value === "string" && value ? [[key, value]] : [];
+              }),
+            ),
             revealed: Object.fromEntries(
               deck.flatMap((question) => {
                 const key = keyByQuestion.get(question.id);
@@ -287,7 +318,7 @@ export default function QuizRunner({
         keepalive: true,
       }).catch(() => {});
     },
-    [slug, deck, keyByQuestion, picks, revealed, index, settings.mode],
+    [slug, deck, keyByQuestion, picks, written, revealed, index, settings.mode],
   );
 
   // Save shortly after anything changes, so a closed tab loses a second at most.
@@ -316,9 +347,10 @@ export default function QuizRunner({
     () =>
       deck.map((q) => {
         const picked = picks[q.id] ?? [];
-        return { question: q, picked, right: isRight(q, picked) };
+        const typedIn = written[q.id] ?? "";
+        return { question: q, picked, typedIn, right: isRight(q, picked, typedIn) };
       }),
-    [deck, picks],
+    [deck, picks, written],
   );
 
   const score = results.filter((r) => r.right).length;
@@ -394,10 +426,21 @@ export default function QuizRunner({
     [current, revealed],
   );
 
+  const setTypedAnswer = useCallback(
+    (value: string) => {
+      // Locked once graded, so the mark on screen cannot disagree with the
+      // answer that earned it.
+      if (!current || revealed[current.id]) return;
+      setWritten((prev) => ({ ...prev, [current.id]: value }));
+    },
+    [current, revealed],
+  );
+
   const advance = useCallback(() => {
     if (!current) return;
     const picked = picks[current.id] ?? [];
-    if (settings.mode === "reviewer" && !revealed[current.id] && picked.length > 0) {
+    const answered = hasAnswered(current, picked, written[current.id] ?? "");
+    if (settings.mode === "reviewer" && !revealed[current.id] && answered) {
       setRevealed((prev) => ({ ...prev, [current.id]: true }));
       return;
     }
@@ -406,7 +449,7 @@ export default function QuizRunner({
       return;
     }
     setPhase("report");
-  }, [current, picks, settings.mode, revealed, index, deck.length]);
+  }, [current, picks, written, settings.mode, revealed, index, deck.length]);
 
   useEffect(() => {
     if (phase !== "running") return;
@@ -422,6 +465,8 @@ export default function QuizRunner({
         return;
       }
       if (!current) return;
+      // A letter is a letter while they are typing an answer, not a shortcut.
+      if (isTypedQuestion(current)) return;
 
       let position = -1;
       if (/^[a-zA-Z]$/.test(event.key)) position = LETTERS.indexOf(event.key.toUpperCase());
@@ -700,7 +745,10 @@ export default function QuizRunner({
                   <div className="review-row row-yours">
                     <dt>You marked</dt>
                     <dd>
-                      <TeXList texts={pickedTexts(r.question, r.picked)} empty="Nothing marked" />
+                      <TeXList
+                        texts={pickedTexts(r.question, r.picked, r.typedIn)}
+                        empty={r.question.kind === "typed" ? "Nothing typed" : "Nothing marked"}
+                      />
                     </dd>
                   </div>
                   {!r.right ? (
@@ -734,12 +782,15 @@ export default function QuizRunner({
   if (!current) return null;
 
   const picked = picks[current.id] ?? [];
+  const typedNow = isTypedQuestion(current);
+  const typedValue = written[current.id] ?? "";
   const isRevealed = Boolean(revealed[current.id]);
+  const answeredNow = hasAnswered(current, picked, typedValue);
   const isLast = index === deck.length - 1;
 
   let nextLabel: string;
   if (settings.mode === "reviewer" && !isRevealed) {
-    nextLabel = picked.length ? "Check answer" : "Skip";
+    nextLabel = answeredNow ? "Check answer" : "Skip";
   } else if (isLast) {
     nextLabel = settings.mode === "test" ? "Finish and grade" : "See results";
   } else {
@@ -755,8 +806,10 @@ export default function QuizRunner({
         <ol className="track" aria-hidden="true">
           {deck.map((q, i) => {
             const classes: string[] = [];
-            if (revealed[q.id]) classes.push(isRight(q, picks[q.id] ?? []) ? "is-right" : "is-wrong");
-            else if ((picks[q.id] ?? []).length) classes.push("is-answered");
+            const answered = hasAnswered(q, picks[q.id] ?? [], written[q.id] ?? "");
+            if (revealed[q.id]) {
+              classes.push(isRight(q, picks[q.id] ?? [], written[q.id] ?? "") ? "is-right" : "is-wrong");
+            } else if (answered) classes.push("is-answered");
             if (i === index) classes.push("is-current");
             return <li key={q.id} className={classes.join(" ")} />;
           })}
@@ -768,13 +821,38 @@ export default function QuizRunner({
       </div>
 
       <div className="qcard">
-        <p className="qtype rubric">{current.multi ? "Pick all that apply" : "Pick one"}</p>
+        <p className="qtype rubric">
+          {typedNow ? "Type your answer" : current.multi ? "Pick all that apply" : "Pick one"}
+        </p>
 
         <h1 className="qtext">
           <span className="qnum">{String(index + 1).padStart(2, "0")}</span>
           <TeX>{current.text}</TeX>
         </h1>
 
+        {typedNow ? (
+          <div
+            className={`typed${isRevealed ? (isRight(current, picked, typedValue) ? " is-right" : " is-wrong") : ""}`}
+          >
+            {/* Keyed on the question so each one gets its own field rather
+                than inheriting the last answer typed. */}
+            <MathField
+              key={current.id}
+              value={typedValue}
+              placeholder="Your answer"
+              ariaLabel={`Your answer to question ${index + 1}`}
+              onChange={setTypedAnswer}
+            />
+            {isRevealed ? (
+              <p className="typed-verdict">
+                <span className="rubric">
+                  {isRight(current, picked, typedValue) ? "Correct" : "Answer"}
+                </span>
+                <TeXList texts={correctTexts(current)} empty="None" />
+              </p>
+            ) : null}
+          </div>
+        ) : (
         <div className="opts" role="group" aria-label={current.multi ? "Pick all that apply" : "Pick one"}>
           {current.options.map((option, i) => {
             const chosen = picked.includes(option.id);
@@ -816,6 +894,7 @@ export default function QuizRunner({
             );
           })}
         </div>
+        )}
 
         {isRevealed && current.note ? (
           <p className="note">
@@ -838,7 +917,11 @@ export default function QuizRunner({
         </button>
       </div>
 
-      {current.options.length <= 10 ? (
+      {/* The one floating button for the page, and only where an answer
+          might actually need an equation. */}
+      {typedNow ? <MathKeyboardToggle /> : null}
+
+      {!typedNow && current.options.length <= 10 ? (
         <p className="keyhint">
           Press <kbd>1</kbd>–<kbd>{Math.min(9, current.options.length)}</kbd> to mark an answer.{" "}
           <kbd>Enter</kbd> to continue.

@@ -135,3 +135,56 @@ test("suggests a title from the first question", () => {
   assert.equal(suggestTitle(questions), "What is the capital of France?");
   assert.equal(suggestTitle([]), "Untitled sheet");
 });
+
+test("reads a typed question", () => {
+  const { questions, problems } = parseSheet("Q: Capital of France?\n= Paris\n= City of Paris");
+  assert.equal(problems.length, 0);
+  assert.equal(questions.length, 1);
+  assert.equal(questions[0].kind, "typed");
+  assert.equal(questions[0].multi, false);
+  assert.deepEqual(questions[0].options, []);
+  assert.deepEqual(questions[0].accept, ["Paris", "City of Paris"]);
+});
+
+test("a typed question keeps its explanation", () => {
+  const { questions } = parseSheet("Q: 2 + 2?\n= 4\n> Add them.\n> Twice.");
+  assert.equal(questions[0].note, "Add them.\nTwice.");
+});
+
+test("a chosen question has no kind", () => {
+  const { questions } = parseSheet("Q: One\n* a\n- b");
+  assert.equal(questions[0].kind, undefined);
+  assert.equal(questions[0].accept, undefined);
+});
+
+test("a question cannot be typed and chosen at once", () => {
+  const { questions, problems } = parseSheet("Q: Capital?\n= Paris\n* Paris\n- London");
+  assert.equal(questions.length, 0);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0].message, /mixes/);
+});
+
+test("one accepted answer is enough", () => {
+  const { questions, problems } = parseSheet("Q: 2 + 2?\n= 4");
+  assert.equal(problems.length, 0);
+  assert.equal(questions[0].accept?.length, 1);
+});
+
+test("a typed answer needs a question above it", () => {
+  const { problems } = parseSheet("= Paris");
+  assert.equal(problems.length, 1);
+  assert.match(problems[0].message, /no question above/);
+});
+
+test("typed and chosen questions mix freely in one sheet", () => {
+  const { questions, problems } = parseSheet("Q: One\n* a\n- b\n\nQ: Two\n= 42");
+  assert.equal(problems.length, 0);
+  assert.equal(questions.length, 2);
+  assert.equal(questions[0].kind, undefined);
+  assert.equal(questions[1].kind, "typed");
+});
+
+test("LaTeX survives a typed answer", () => {
+  const { questions } = parseSheet("Q: Derivative of $x^2$?\n= $2x$");
+  assert.deepEqual(questions[0].accept, ["$2x$"]);
+});

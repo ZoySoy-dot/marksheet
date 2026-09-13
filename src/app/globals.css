@@ -1205,6 +1205,59 @@ body > .ML__keyboard { z-index: 40; }
   white-space: pre-line;
 }
 
+/* ---------- typed answers ---------- */
+
+/*
+ * The written counterpart to .opts: one field instead of a list. It borrows
+ * the option colours so being right or wrong reads the same either way.
+ */
+.typed {
+  max-width: 42rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  padding: .35rem .6rem;
+  transition: border-color .15s var(--ease), background .15s var(--ease);
+}
+.typed:focus-within { border-color: var(--accent); }
+.typed .mathfield-wrap { min-height: 2.9rem; }
+.typed .mathfield-placeholder { left: .35rem; }
+
+.typed.is-right { border-color: var(--good); background: var(--good-soft); }
+.typed.is-wrong { border-color: var(--bad); background: var(--bad-soft); }
+
+.typed-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .5rem;
+  margin: .1rem .35rem .45rem;
+  font-size: .95rem;
+}
+.typed.is-right .typed-verdict .rubric { color: var(--good); }
+.typed.is-wrong .typed-verdict .rubric { color: var(--bad); }
+
+/* Picking how a question is answered, inside the builder card. */
+.seg-kind { margin: .75rem 0 0; }
+.seg-kind .seg-btn { padding: .35rem .7rem; font-size: .85rem; }
+
+/* An accepted wording has no bubble to tick, so = stands in that column. */
+.qbuild-opt.is-accept .opt-key {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  font-size: .95rem;
+  color: var(--faint);
+}
+
+.qbuild-hint {
+  display: block;
+  margin-top: .4rem;
+  font-size: .85rem;
+  color: var(--faint);
+  line-height: 1.5;
+}
+
 .keyhint { margin: 1.2rem 0 0; font-size: .85rem; color: var(--faint); line-height: 1.9; }
 
 /* ---------- before you start ---------- */

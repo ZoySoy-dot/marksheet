@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --experimental-strip-types --test scripts/parse.test.ts scripts/tex.test.ts scripts/serialize.test.ts scripts/scheduling.test.ts scripts/mine.test.ts scripts/mathfield.test.ts scripts/normalise.test.ts",
+    "test": "node --experimental-strip-types --test scripts/parse.test.ts scripts/tex.test.ts scripts/serialize.test.ts scripts/scheduling.test.ts scripts/mine.test.ts scripts/mathfield.test.ts scripts/normalise.test.ts scripts/answer.test.ts",
     "db:init": "node --env-file=.env.local scripts/init-db.mjs"
   },
   "dependencies": {

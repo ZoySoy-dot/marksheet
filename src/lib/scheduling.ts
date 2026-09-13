@@ -22,6 +22,15 @@ const MS_PER_WORD = 60_000 / WORDS_PER_MINUTE;
 const SINGLE_PICK_MS = 700;
 const MULTI_PICK_MS = 1_800;
 
+/**
+ * Typing an answer is not clicking one. At a modest 40 words a minute a short
+ * formula still costs several seconds, and charging that to recall would grade
+ * every written answer Hard however well it was known. The allowance follows
+ * the shortest accepted answer, since that is the quickest way to be right.
+ */
+const MS_PER_TYPED_CHAR = 250;
+const TYPE_COMMIT_MS = 1_200;
+
 export const EASY_UNDER_MS = 3_000;
 export const GOOD_UNDER_MS = 10_000;
 
@@ -34,10 +43,28 @@ export type TimingShape = {
   text: string;
   options: { text: string }[];
   multi: boolean;
+  kind?: "typed";
+  accept?: string[];
 };
+
+/** The shortest answer that would be marked right, in characters. */
+function shortestAnswer(accept: readonly string[] | undefined): number {
+  let shortest = Infinity;
+  for (const answer of accept ?? []) {
+    const length = answer.trim().length;
+    if (length > 0 && length < shortest) shortest = length;
+  }
+  return Number.isFinite(shortest) ? shortest : 0;
+}
 
 /** How long this question takes to read and answer before any recall happens. */
 export function readingAllowanceMs(question: TimingShape): number {
+  if (question.kind === "typed") {
+    const reading = countWords(question.text) * MS_PER_WORD;
+    const writing = shortestAnswer(question.accept) * MS_PER_TYPED_CHAR + TYPE_COMMIT_MS;
+    return Math.round(reading + writing);
+  }
+
   const words =
     countWords(question.text) +
     question.options.reduce((total, option) => total + countWords(option.text), 0);

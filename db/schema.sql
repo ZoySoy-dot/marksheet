@@ -96,6 +96,7 @@ create table if not exists runs (
   display_name text,
   order_keys   text[] not null default '{}',
   picks        jsonb not null default '{}'::jsonb,
+  written      jsonb not null default '{}'::jsonb,
   revealed     jsonb not null default '{}'::jsonb,
   timings      jsonb not null default '{}'::jsonb,
   position     integer not null default 0,
@@ -112,6 +113,7 @@ create index if not exists runs_live_idx on runs (quiz_id, last_seen_at desc);
 -- user's session, so a picture has to be recorded when they finish a run.
 alter table attempts add column if not exists image_url text;
 alter table runs     add column if not exists image_url text;
+alter table runs     add column if not exists written jsonb not null default '{}'::jsonb;
 
 -- Who wrote it, recorded at publish time. The quiz page shows other people's
 -- work, and we only ever hold the browsing user's session.

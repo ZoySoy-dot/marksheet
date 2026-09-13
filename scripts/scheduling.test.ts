@@ -146,3 +146,30 @@ test("a harder grade never schedules further out than an easier one", async () =
     assert.ok(due[i] >= due[i - 1], `rating ${i + 1} should not be due before rating ${i}`);
   }
 });
+
+test("typing an answer is not charged to recall", () => {
+  // Same question, same eight seconds. Clicking one of four short options is
+  // mostly thinking; typing "chlorophyll" is mostly typing.
+  const chosen = { text: "Pigment that makes leaves green?", multi: false, options: [{ text: "chlorophyll" }, { text: "carotene" }] };
+  const typed = { text: "Pigment that makes leaves green?", multi: false, options: [], kind: "typed" as const, accept: ["chlorophyll"] };
+
+  assert.ok(readingAllowanceMs(typed) > readingAllowanceMs(chosen));
+  assert.equal(gradeAnswer(typed, { correct: true, elapsedMs: 8_000 }), Rating.Easy);
+});
+
+test("a long typed answer earns more room than a short one", () => {
+  const short = { text: "Symbol for iron?", multi: false, options: [], kind: "typed" as const, accept: ["Fe"] };
+  const long = { text: "Symbol for iron?", multi: false, options: [], kind: "typed" as const, accept: ["ferrum, from the Latin"] };
+  assert.ok(readingAllowanceMs(long) > readingAllowanceMs(short));
+});
+
+test("the quickest accepted wording sets the allowance", () => {
+  const q = { text: "Symbol for iron?", multi: false, options: [], kind: "typed" as const, accept: ["a much longer wording", "Fe"] };
+  const onlyShort = { text: "Symbol for iron?", multi: false, options: [], kind: "typed" as const, accept: ["Fe"] };
+  assert.equal(readingAllowanceMs(q), readingAllowanceMs(onlyShort));
+});
+
+test("a wrong typed answer is still Again", () => {
+  const typed = { text: "Symbol for iron?", multi: false, options: [], kind: "typed" as const, accept: ["Fe"] };
+  assert.equal(gradeAnswer(typed, { correct: false, elapsedMs: 2_000 }), Rating.Again);
+});

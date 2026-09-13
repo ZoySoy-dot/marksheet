@@ -255,6 +255,8 @@ export async function getActiveRunners(quizId: number, withinSeconds = 90): Prom
 export type SavedRun = {
   orderKeys: string[];
   picks: Record<string, number[]>;
+  /** Answers they typed, for questions that are written rather than chosen. */
+  written: Record<string, string>;
   revealed: Record<string, boolean>;
   timings: Record<string, number>;
   position: number;
@@ -266,13 +268,14 @@ export type SavedRun = {
 export async function getRunFor(userId: string, quizId: number): Promise<SavedRun | null> {
   const sql = getSql();
   const rows = (await sql`
-    select order_keys, picks, revealed, timings, position, mode, started_at
+    select order_keys, picks, written, revealed, timings, position, mode, started_at
     from runs
     where user_id = ${userId} and quiz_id = ${quizId} and finished_at is null
     limit 1
   `) as {
     order_keys: string[] | null;
     picks: Record<string, number[]> | null;
+    written: Record<string, string> | null;
     revealed: Record<string, boolean> | null;
     timings: Record<string, number> | null;
     position: number;
@@ -288,6 +291,7 @@ export async function getRunFor(userId: string, quizId: number): Promise<SavedRu
   return {
     orderKeys,
     picks: row.picks ?? {},
+    written: row.written ?? {},
     revealed: row.revealed ?? {},
     timings: row.timings ?? {},
     position: Number(row.position ?? 0),

@@ -14,6 +14,8 @@ export type SerializableOption = {
 export type SerializableQuestion = {
   text: string;
   options: SerializableOption[];
+  /** Present on a typed question, where it replaces the options entirely. */
+  accept?: string[];
   note?: string;
 };
 
@@ -21,6 +23,7 @@ export type SerializableQuestion = {
 const isBlank = (question: SerializableQuestion) =>
   !question.text.trim() &&
   !(question.note ?? "").trim() &&
+  (question.accept ?? []).every((answer) => !answer.trim()) &&
   question.options.every((option) => !option.text.trim());
 
 export function serializeSheet(questions: SerializableQuestion[]): string {
@@ -30,12 +33,20 @@ export function serializeSheet(questions: SerializableQuestion[]): string {
   const blocks = written.map((question) => {
     const lines = [`Q: ${question.text.trim()}`];
 
-    for (const option of question.options) {
-      const text = option.text.trim();
-      // A half-typed answer row is not written out. The readout will still say
-      // the question needs two answers, which is the message that helps.
-      if (!text) continue;
-      lines.push(`${option.correct ? "*" : "-"} ${text}`);
+    const accepted = (question.accept ?? []).map((answer) => answer.trim()).filter(Boolean);
+
+    if (accepted.length > 0) {
+      // A typed question carries no options, so writing both would produce a
+      // sheet the parser rejects for mixing the two kinds.
+      for (const answer of accepted) lines.push(`= ${answer}`);
+    } else {
+      for (const option of question.options) {
+        const text = option.text.trim();
+        // A half-typed answer row is not written out. The readout will still
+        // say the question needs two answers, which is the message that helps.
+        if (!text) continue;
+        lines.push(`${option.correct ? "*" : "-"} ${text}`);
+      }
     }
 
     for (const line of (question.note ?? "").split("\n")) {

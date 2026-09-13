@@ -166,3 +166,30 @@ test("counts comment lines that the builder cannot hold", () => {
   assert.equal(countComments("# one\nQ: a\n* b\n  # two\n- c"), 2);
   assert.equal(countComments("Q: a\n* b\n- c"), 0);
 });
+
+test("writes a typed question", () => {
+  const text = serializeSheet([{ text: "Capital of France?", accept: ["Paris", "City of Paris"], options: [] }]);
+  assert.equal(text, "Q: Capital of France?\n= Paris\n= City of Paris\n");
+});
+
+test("a typed question round trips", () => {
+  const source = "Q: Derivative of $x^2$?\n= $2x$\n= $2 \cdot x$\n> Power rule.\n";
+  const { questions } = parseSheet(source);
+  const again = serializeSheet(
+    questions.map((q) => ({ text: q.text, options: [], accept: q.accept, note: q.note })),
+  );
+  assert.equal(again, source);
+});
+
+test("accepted answers win over stray options", () => {
+  // The builder cannot produce both, and writing both would make a sheet the
+  // parser rejects for mixing the two kinds.
+  const text = serializeSheet([
+    { text: "2 + 2?", accept: ["4"], options: [{ text: "leftover", correct: true }] },
+  ]);
+  assert.equal(text, "Q: 2 + 2?\n= 4\n");
+});
+
+test("an untouched typed card is not a question", () => {
+  assert.equal(serializeSheet([{ text: "", accept: ["  "], options: [] }]), "");
+});
