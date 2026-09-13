@@ -2,6 +2,14 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import Google from "next-auth/providers/google";
 
 /**
+ * The shape of the id Auth.js invents when it cannot find a real one:
+ * account.providerAccountId falls back to crypto.randomUUID() (@auth/core,
+ * callback/oauth). Google's subject claim is digits, so anything of this shape
+ * is a throwaway that would quietly become the owner of someone's work.
+ */
+const INVENTED_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
  * Google sign-in, and nothing else.
  *
  * No database adapter: the session is a signed JWT, and the only thing we keep
@@ -32,7 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (typeof profile?.sub === "string" && profile.sub) ||
         (typeof account?.providerAccountId === "string" && account.providerAccountId) ||
         null;
-      if (stable) t.uid = stable;
+      if (stable && !INVENTED_ID.test(stable)) t.uid = stable;
 
       // On every request after sign-in, Auth.js re-runs this callback with the
       // decoded cookie and no profile or account, so a token minted before
