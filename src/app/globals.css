@@ -11,12 +11,13 @@
   --stock-3:      #DDDDDF;
   --graphite:     #1F2023;
   --graphite-2:   #56575C;
-  --graphite-3:   #86878D;
+  --graphite-3:   #67686D;
   --dropout:      #0E8FA8;
+  --dropout-ink:  #0B7286;
   --dropout-soft: rgba(14, 143, 168, .12);
   --score:        #C0322B;
   --score-soft:   rgba(192, 50, 43, .10);
-  --credit:       #2C7A4B;
+  --credit:       #2B7649;
   --credit-soft:  rgba(44, 122, 75, .10);
   --rule:         rgba(31, 32, 35, .14);
   --rule-firm:    rgba(31, 32, 35, .26);
@@ -41,8 +42,9 @@
     --stock-3:      #2D2E33;
     --graphite:     #E8E8EA;
     --graphite-2:   #A0A1A7;
-    --graphite-3:   #6F7076;
+    --graphite-3:   #8A8B90;
     --dropout:      #3FCBE6;
+    --dropout-ink:  #3FCBE6;
     --dropout-soft: rgba(63, 203, 230, .14);
     --score:        #F2705F;
     --score-soft:   rgba(242, 112, 95, .14);
@@ -62,8 +64,9 @@
   --stock-3:      #2D2E33;
   --graphite:     #E8E8EA;
   --graphite-2:   #A0A1A7;
-  --graphite-3:   #6F7076;
+  --graphite-3:   #8A8B90;
   --dropout:      #3FCBE6;
+  --dropout-ink:  #3FCBE6;
   --dropout-soft: rgba(63, 203, 230, .14);
   --score:        #F2705F;
   --score-soft:   rgba(242, 112, 95, .14);
@@ -100,7 +103,7 @@ main { flex: 1 0 auto; }
 
 img { max-width: 100%; }
 
-a { color: var(--dropout); }
+a { color: var(--dropout-ink); }
 
 :focus-visible {
   outline: 2px solid var(--dropout);
@@ -126,11 +129,11 @@ a { color: var(--dropout); }
 .rubric {
   margin: 0;
   font-family: var(--ff-mono);
-  font-size: .68rem;
-  font-weight: 500;
-  letter-spacing: .16em;
+  font-size: .74rem;
+  font-weight: 600;
+  letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--dropout);
+  color: var(--dropout-ink);
 }
 
 .display {
@@ -240,21 +243,21 @@ kbd {
 
 .masthead-nav a {
   font-family: var(--ff-mono);
-  font-size: .66rem;
-  letter-spacing: .12em;
+  font-size: .74rem;
+  letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--graphite-2);
   text-decoration: none;
 }
-.masthead-nav a:hover { color: var(--dropout); }
+.masthead-nav a:hover { color: var(--dropout-ink); }
 
 .theme-toggle,
 .auth-btn {
   font-family: var(--ff-mono);
-  font-size: .66rem;
-  letter-spacing: .12em;
+  font-size: .72rem;
+  letter-spacing: .08em;
   text-transform: uppercase;
-  color: var(--dropout);
+  color: var(--dropout-ink);
   background: none;
   border: 1px solid var(--dropout);
   border-radius: 999px;
@@ -294,7 +297,7 @@ kbd {
 
 .deck {
   font-family: var(--ff-prose);
-  font-size: 1.12rem;
+  font-size: 1.2rem;
   line-height: 1.45;
   color: var(--graphite-2);
   margin: 1.15rem 0 0;
@@ -302,12 +305,79 @@ kbd {
 }
 
 /* The instruction block, printed in drop-out ink like a real form. */
-.legend {
+.legend,
+.guide {
   margin-top: 2.25rem;
   border-top: 1px solid var(--dropout);
   border-bottom: 1px solid var(--dropout);
-  padding: 1rem 0 1.1rem;
+  padding: 1rem 0 1.25rem;
 }
+
+/* Show the format working, rather than describing it. */
+.guide-step {
+  margin: 1.15rem 0 .5rem;
+  font-family: var(--ff-mono);
+  font-size: .76rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--graphite-2);
+}
+
+.guide-code {
+  margin: 0;
+  background: var(--stock-2);
+  border: 1px solid var(--rule-firm);
+  border-radius: 3px;
+  padding: .8rem .9rem;
+  font-family: var(--ff-mono);
+  font-size: .82rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.guide-arrow {
+  margin: .55rem 0 0;
+  text-align: center;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--dropout-ink);
+}
+
+.guide-preview {
+  border: 1px solid var(--rule-firm);
+  border-radius: 3px;
+  padding: .9rem;
+  background: var(--stock-2);
+}
+
+.guide-q {
+  margin: 0 0 .8rem;
+  font-family: var(--ff-prose);
+  font-size: 1.02rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.guide-preview .opts { gap: .35rem; }
+
+.guide-preview .opt {
+  padding: .5rem .65rem;
+  gap: .6rem;
+  background: var(--stock);
+  font-size: .92rem;
+}
+
+.guide-preview .bubble { width: 17px; height: 17px; }
+
+/* A sample row has no input to check, so the mark is set directly. */
+.opt-static { cursor: default; }
+.opt-static:hover { border-color: var(--rule-firm); }
+.opt-static.is-marked { border-color: var(--graphite); }
+.opt-static.is-marked .bubble { border-color: var(--graphite); }
+.opt-static.is-marked .bubble-fill { transform: scale(1); }
+
+.guide .legend-list { margin-top: 1.35rem; }
 
 .legend-list {
   margin: .85rem 0 0;
@@ -324,26 +394,26 @@ kbd {
 
 .legend-row dt {
   font-family: var(--ff-mono);
-  font-size: .82rem;
+  font-size: .88rem;
   font-weight: 600;
-  color: var(--dropout);
+  color: var(--dropout-ink);
 }
 
 .legend-row dd {
   margin: 0;
-  font-size: .86rem;
+  font-size: .92rem;
   color: var(--graphite-2);
 }
 
 .legend-foot {
   margin: 1rem 0 0;
-  font-size: .82rem;
+  font-size: .9rem;
   line-height: 1.5;
   color: var(--graphite-2);
   border-left: 2px solid var(--dropout);
   padding-left: .7rem;
 }
-.legend-foot code { color: var(--dropout); font-weight: 600; }
+.legend-foot code { color: var(--dropout-ink); font-weight: 600; }
 
 .field-head {
   display: flex;
@@ -427,8 +497,8 @@ kbd {
 
 .figure-label {
   font-family: var(--ff-mono);
-  font-size: .64rem;
-  letter-spacing: .14em;
+  font-size: .7rem;
+  letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--graphite-3);
 }
@@ -439,9 +509,43 @@ kbd {
 .readout-empty {
   margin: .5rem 0 0;
   font-family: var(--ff-mono);
-  font-size: .72rem;
+  font-size: .8rem;
   color: var(--graphite-3);
 }
+
+/* Before anything is typed, three zeroes teach nothing. Offer a way in. */
+.readout.readout-start { padding: 1.25rem 1.25rem 1.35rem; }
+
+.readout-lead {
+  margin: 0;
+  font-family: var(--ff-display);
+  font-weight: 700;
+  font-stretch: 108%;
+  font-size: 1.05rem;
+  letter-spacing: -.005em;
+}
+
+.readout-sub {
+  margin: .4rem 0 0;
+  font-size: .95rem;
+  line-height: 1.5;
+  color: var(--graphite-2);
+  max-width: 46ch;
+}
+
+.readout-actions {
+  margin-top: 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+}
+
+.readout-ok {
+  margin: .7rem 0 0;
+  font-size: .92rem;
+  color: var(--credit);
+}
+.readout-ok::before { content: "✓"; margin-right: .45rem; }
 
 .problems {
   margin: .85rem 0 0;
@@ -454,7 +558,7 @@ kbd {
 
 .problems li {
   font-family: var(--ff-mono);
-  font-size: .74rem;
+  font-size: .8rem;
   line-height: 1.5;
   color: var(--score);
 }
@@ -484,7 +588,7 @@ kbd {
   align-items: center;
   gap: .5rem;
   cursor: pointer;
-  font-size: .88rem;
+  font-size: .94rem;
   color: var(--graphite-2);
 }
 
@@ -558,7 +662,7 @@ kbd {
   font-family: var(--ff-mono);
   font-size: .7rem;
   font-weight: 600;
-  color: var(--dropout);
+  color: var(--dropout-ink);
   padding-top: .2rem;
 }
 
@@ -572,7 +676,7 @@ kbd {
 
 .step-note {
   margin: 0;
-  font-size: .88rem;
+  font-size: .94rem;
   line-height: 1.5;
   color: var(--graphite-2);
 }
@@ -669,7 +773,7 @@ kbd {
 }
 
 .mode-note {
-  font-size: .88rem;
+  font-size: .94rem;
   line-height: 1.45;
   color: var(--graphite-2);
 }
@@ -732,10 +836,10 @@ kbd {
   padding: 0;
   cursor: pointer;
   font-family: var(--ff-mono);
-  font-size: .7rem;
-  letter-spacing: .08em;
+  font-size: .78rem;
+  letter-spacing: .04em;
   text-transform: uppercase;
-  color: var(--dropout);
+  color: var(--dropout-ink);
   border-bottom: 1px solid currentColor;
   text-decoration: none;
 }
@@ -802,7 +906,7 @@ kbd {
 
 .share-note {
   margin: .9rem 0 0;
-  font-size: .82rem;
+  font-size: .9rem;
   line-height: 1.5;
   color: var(--graphite-2);
 }
@@ -890,7 +994,7 @@ kbd {
 .qnum {
   font-family: var(--ff-mono);
   font-size: .58em;
-  color: var(--dropout);
+  color: var(--dropout-ink);
   vertical-align: .55em;
   margin-right: .6rem;
   letter-spacing: .04em;
@@ -1007,7 +1111,7 @@ kbd {
 .keyhint {
   margin: 1.1rem 0 0;
   font-family: var(--ff-mono);
-  font-size: .68rem;
+  font-size: .76rem;
   color: var(--graphite-3);
   line-height: 1.9;
 }
@@ -1207,8 +1311,8 @@ kbd {
 .mine-meta {
   margin: .3rem 0 0;
   font-family: var(--ff-mono);
-  font-size: .66rem;
-  letter-spacing: .1em;
+  font-size: .74rem;
+  letter-spacing: .04em;
   text-transform: uppercase;
   color: var(--graphite-3);
 }
@@ -1246,7 +1350,7 @@ kbd {
 .footer p {
   margin: 0;
   font-family: var(--ff-mono);
-  font-size: .66rem;
+  font-size: .74rem;
   letter-spacing: .06em;
   color: var(--graphite-3);
 }

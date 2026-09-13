@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Legend from "@/components/Legend";
+import FormatGuide from "@/components/FormatGuide";
 import QuizRunner from "@/components/QuizRunner";
 import { parseSheet, suggestTitle } from "@/lib/parse";
 import { findTexProblems } from "@/lib/tex";
@@ -211,9 +211,9 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
           <p className="deck">
             {mode === "edit"
               ? "Change the questions below. Everyone with the link sees the new version."
-              : "Paste your questions in the format below. Marksheet reads the marks and runs the quiz."}
+              : "Write your questions as plain text, then publish. Anyone with the link can take the quiz, no account needed."}
           </p>
-          <Legend />
+          <FormatGuide />
         </div>
 
         <div>
@@ -260,39 +260,58 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
             }
           />
 
-          <div className="readout" id="readout" role="status" aria-live="polite">
-            <div className="readout-figures">
-              <p className="figure">
-                <span className="figure-num">{questions.length}</span>
-                <span className="figure-label">questions</span>
+          {source.trim().length === 0 ? (
+            <div className="readout readout-start" id="readout" role="status" aria-live="polite">
+              <p className="readout-lead">Nothing written yet</p>
+              <p className="readout-sub">
+                Load a sample to see a finished sheet you can take straight away, or let a chatbot
+                write one from your notes.
               </p>
-              <p className="figure">
-                <span className="figure-num">{multiCount}</span>
-                <span className="figure-label">pick all</span>
-              </p>
-              <p className={`figure${problems.length ? " is-flagged" : ""}`}>
-                <span className="figure-num">{problems.length}</span>
-                <span className="figure-label">problems</span>
-              </p>
+              <div className="readout-actions">
+                <button className="btn btn-primary" type="button" onClick={loadSample}>
+                  Load a sample
+                </button>
+                <Link className="btn btn-quiet" href="/ai">
+                  Write it with AI
+                </Link>
+              </div>
             </div>
+          ) : (
+            <div className="readout" id="readout" role="status" aria-live="polite">
+              <div className="readout-figures">
+                <p className="figure">
+                  <span className="figure-num">{questions.length}</span>
+                  <span className="figure-label">questions</span>
+                </p>
+                <p className="figure">
+                  <span className="figure-num">{multiCount}</span>
+                  <span className="figure-label">pick all</span>
+                </p>
+                <p className={`figure${problems.length ? " is-flagged" : ""}`}>
+                  <span className="figure-num">{problems.length}</span>
+                  <span className="figure-label">problems</span>
+                </p>
+              </div>
 
-            {source.trim().length === 0 ? (
-              <p className="readout-empty">Nothing marked yet.</p>
-            ) : null}
-
-            {problems.length ? (
-              <ul className="problems">
-                {problems.slice(0, PROBLEMS_SHOWN).map((problem) => (
-                  <li key={`${problem.line}-${problem.message}`}>
-                    Line {problem.line}: {problem.message}
-                  </li>
-                ))}
-                {problems.length > PROBLEMS_SHOWN ? (
-                  <li>And {problems.length - PROBLEMS_SHOWN} more.</li>
-                ) : null}
-              </ul>
-            ) : null}
-          </div>
+              {problems.length ? (
+                <ul className="problems">
+                  {problems.slice(0, PROBLEMS_SHOWN).map((problem) => (
+                    <li key={`${problem.line}-${problem.message}`}>
+                      Line {problem.line}: {problem.message}
+                    </li>
+                  ))}
+                  {problems.length > PROBLEMS_SHOWN ? (
+                    <li>And {problems.length - PROBLEMS_SHOWN} more.</li>
+                  ) : null}
+                </ul>
+              ) : (
+                <p className="readout-ok">
+                  Ready to publish. {questions.length} question
+                  {questions.length === 1 ? "" : "s"} read cleanly.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="actions">
             {mode === "create" ? (
