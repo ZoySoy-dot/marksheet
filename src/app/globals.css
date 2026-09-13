@@ -6,22 +6,22 @@
    ============================================================ */
 
 :root {
-  --stock:        #E6E7E0;
-  --stock-2:      #F1F2EC;
-  --stock-3:      #DBDDD3;
-  --graphite:     #22241E;
-  --graphite-2:   #5B5E53;
-  --graphite-3:   #8B8E82;
+  --stock:        #E9E9EA;
+  --stock-2:      #F4F4F5;
+  --stock-3:      #DDDDDF;
+  --graphite:     #1F2023;
+  --graphite-2:   #56575C;
+  --graphite-3:   #86878D;
   --dropout:      #0E8FA8;
   --dropout-soft: rgba(14, 143, 168, .12);
   --score:        #C0322B;
   --score-soft:   rgba(192, 50, 43, .10);
   --credit:       #2C7A4B;
   --credit-soft:  rgba(44, 122, 75, .10);
-  --rule:         rgba(34, 36, 30, .16);
-  --rule-firm:    rgba(34, 36, 30, .30);
+  --rule:         rgba(31, 32, 35, .14);
+  --rule-firm:    rgba(31, 32, 35, .26);
   --mark-hatch:   rgba(255, 255, 255, .16);
-  --shadow:       0 1px 0 rgba(34,36,30,.06), 0 12px 30px -18px rgba(34,36,30,.45);
+  --shadow:       0 1px 0 rgba(31,32,35,.05), 0 12px 30px -18px rgba(31,32,35,.35);
 
   --ff-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
   --ff-body:    var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
@@ -36,43 +36,43 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --stock:        #15171A;
-    --stock-2:      #1D2025;
-    --stock-3:      #272B31;
-    --graphite:     #E9EAE4;
-    --graphite-2:   #A2A69C;
-    --graphite-3:   #71766C;
+    --stock:        #1A1B1E;
+    --stock-2:      #232428;
+    --stock-3:      #2D2E33;
+    --graphite:     #E8E8EA;
+    --graphite-2:   #A0A1A7;
+    --graphite-3:   #6F7076;
     --dropout:      #3FCBE6;
     --dropout-soft: rgba(63, 203, 230, .14);
     --score:        #F2705F;
     --score-soft:   rgba(242, 112, 95, .14);
     --credit:       #4FCB86;
     --credit-soft:  rgba(79, 203, 134, .14);
-    --rule:         rgba(233, 234, 228, .14);
-    --rule-firm:    rgba(233, 234, 228, .28);
+    --rule:         rgba(232, 232, 234, .13);
+    --rule-firm:    rgba(232, 232, 234, .26);
     --mark-hatch:   rgba(0, 0, 0, .22);
-    --shadow:       0 1px 0 rgba(0,0,0,.3), 0 14px 34px -20px rgba(0,0,0,.9);
+    --shadow:       0 1px 0 rgba(0,0,0,.25), 0 14px 34px -20px rgba(0,0,0,.8);
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --stock:        #15171A;
-  --stock-2:      #1D2025;
-  --stock-3:      #272B31;
-  --graphite:     #E9EAE4;
-  --graphite-2:   #A2A69C;
-  --graphite-3:   #71766C;
+  --stock:        #1A1B1E;
+  --stock-2:      #232428;
+  --stock-3:      #2D2E33;
+  --graphite:     #E8E8EA;
+  --graphite-2:   #A0A1A7;
+  --graphite-3:   #6F7076;
   --dropout:      #3FCBE6;
   --dropout-soft: rgba(63, 203, 230, .14);
   --score:        #F2705F;
   --score-soft:   rgba(242, 112, 95, .14);
   --credit:       #4FCB86;
   --credit-soft:  rgba(79, 203, 134, .14);
-  --rule:         rgba(233, 234, 228, .14);
-  --rule-firm:    rgba(233, 234, 228, .28);
+  --rule:         rgba(232, 232, 234, .13);
+  --rule-firm:    rgba(232, 232, 234, .26);
   --mark-hatch:   rgba(0, 0, 0, .22);
-  --shadow:       0 1px 0 rgba(0,0,0,.3), 0 14px 34px -20px rgba(0,0,0,.9);
+  --shadow:       0 1px 0 rgba(0,0,0,.25), 0 14px 34px -20px rgba(0,0,0,.8);
   color-scheme: dark;
 }
 
@@ -95,23 +95,6 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-wrap: break-word;
 }
-
-/* The faint horizontal ruling of a printed form. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    var(--rule) 0 1px,
-    transparent 1px 34px
-  );
-  opacity: .35;
-}
-
-body > * { position: relative; z-index: 1; }
 
 main { flex: 1 0 auto; }
 
@@ -260,7 +243,8 @@ kbd {
 }
 .masthead-nav a:hover { color: var(--dropout); }
 
-.theme-toggle {
+.theme-toggle,
+.auth-btn {
   font-family: var(--ff-mono);
   font-size: .66rem;
   letter-spacing: .12em;
@@ -273,7 +257,11 @@ kbd {
   cursor: pointer;
   transition: background .16s var(--ease);
 }
-.theme-toggle:hover { background: var(--dropout-soft); }
+.theme-toggle:hover,
+.auth-btn:hover { background: var(--dropout-soft); }
+
+/* Clerk's avatar button, sized to sit level with the pills beside it. */
+.masthead-right .cl-userButtonAvatarBox { width: 26px; height: 26px; }
 
 /* ---------- screens ---------- */
 

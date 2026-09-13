@@ -11,6 +11,7 @@
     "db:init": "node --env-file=.env.local scripts/init-db.mjs"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.2",
     "@neondatabase/serverless": "^1.0.1",
     "katex": "^0.18.7",
     "next": "^15.5.4",

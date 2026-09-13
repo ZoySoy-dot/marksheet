@@ -1,5 +1,6 @@
 "use client";
 
+import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -45,6 +46,17 @@ export default function Masthead() {
             {theme === "dark" ? "Light" : "Dark"}
             <span className="sr-only"> theme</span>
           </button>
+
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <button className="auth-btn" type="button">
+                Sign in
+              </button>
+            </SignInButton>
+          </Show>
+          <Show when="signed-in">
+            <UserButton />
+          </Show>
         </div>
       </div>
     </header>
