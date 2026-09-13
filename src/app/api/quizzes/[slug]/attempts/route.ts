@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ slug: string }> };
 
 /**
- * Records that someone finished the sheet, and how they did. Anonymous — no
+ * Records that someone finished the sheet, and how they did. Anonymous: no
  * per-answer data, no identifiers. It only backs the "taken N times" line.
  */
 export async function POST(request: Request, { params }: Context) {

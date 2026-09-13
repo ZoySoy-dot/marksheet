@@ -5,7 +5,7 @@
  *   $$\int_0^1 x^2 dx$$    centred on its own line
  *   \$5                    a literal dollar sign
  *
- * Math has to stay on one line — the format is line-based, so a question or
+ * Math has to stay on one line, because the format is line-based, so a question or
  * an answer is always a single line.
  *
  * Inline math only opens and closes on a non-space character, which is what

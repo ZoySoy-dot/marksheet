@@ -25,7 +25,7 @@ export default function Masthead() {
     try {
       localStorage.setItem("marksheet.theme", next);
     } catch {
-      /* private browsing — the choice just will not stick */
+      /* private browsing, so the choice just will not stick */
     }
   };
 

@@ -3,10 +3,10 @@
 Paste your questions as plain text. Get an interactive quiz you can share with a link.
 
 Built as an OMR answer sheet: circles mean pick one, squares mean pick all that apply, and the
-form's own chrome is printed in "drop-out" cyan — the ink a scanner cannot see.
+form's own chrome is printed in "drop-out" cyan, the ink a scanner cannot see.
 
-- **Stack** — Next.js 15 (App Router), React 19, TypeScript, Neon Postgres, Clerk auth, KaTeX
-- **Hosting** — Vercel
+- **Stack**: Next.js 15 (App Router), React 19, TypeScript, Neon Postgres, Clerk auth, KaTeX
+- **Hosting**: Vercel
 
 ---
 
@@ -60,14 +60,14 @@ Q: Evaluate $$\int_0^1 3x^2 \, dx$$
 Three rules worth knowing:
 
 - **Math stays on one line.** The format is line-based, so a question or an answer is always a
-  single line. `$$…$$` still renders centred — it just has to open and close on the same line.
+  single line. `$$…$$` still renders centred. It just has to open and close on the same line.
 - **Prices survive.** Inline math only opens and closes on a non-space character, so `it costs $5
   and $10` is prose while `$5x$ and $10y$` is math. Write `\$` for a dollar sign that refuses to
   behave.
 - **Broken LaTeX is caught before publishing.** It is reported by line number next to the format
   problems, so `\fraq{1}{2}` on line 12 reads *"Line 12: LaTeX: Undefined control sequence"*.
 
-Author text is HTML-escaped before rendering, and KaTeX runs with `trust: false` — a shared sheet
+Author text is HTML-escaped before rendering, and KaTeX runs with `trust: false`, so a shared sheet
 cannot inject markup into someone else's browser. KaTeX emits MathML alongside its visual output,
 so equations are readable by screen readers.
 
@@ -76,7 +76,7 @@ so equations are readable by screen readers.
 ## Writing a sheet with a chatbot
 
 `/ai` hands you a brief containing the whole format. Paste it into Claude, Gemini or ChatGPT along
-with your reviewer — they read PDFs, slides and photos of notes natively — and paste the reply into
+with your reviewer (they read PDFs, slides and photos of notes natively) and paste the reply into
 the editor.
 
 Marksheet does not call any model itself. There is no API key to manage, nothing to pay for, and no
@@ -87,7 +87,7 @@ The parser ignores code-fence lines, since chatbots wrap their answer in one how
 brief asks them not to.
 
 > A model will occasionally be confidently wrong about your material. Read what comes back before
-> publishing — a sheet that drills the wrong answer is worse than no sheet.
+> publishing. A sheet that drills the wrong answer is worse than no sheet.
 
 ### Why not a built-in generator?
 
@@ -111,7 +111,7 @@ npm test                       # format and LaTeX contract tests
 Three keys are needed: `DATABASE_URL` from Neon, and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` plus
 `CLERK_SECRET_KEY` from the Clerk dashboard.
 
-Without `DATABASE_URL` the editor and **Practise without saving** still work — only publishing and
+Without `DATABASE_URL` the editor and **Practise without saving** still work. Only publishing and
 sharing need the database.
 
 > On Windows, do not pipe secrets into `vercel env add` from PowerShell. It prepends a UTF-8 BOM,
@@ -122,9 +122,9 @@ sharing need the database.
 
 Either:
 
-- **Through Vercel** — project → Storage → Create Database → Neon. Vercel sets `DATABASE_URL`
+- **Through Vercel**: project → Storage → Create Database → Neon. Vercel sets `DATABASE_URL`
   for you. Pull it down locally with `vercel env pull .env.local`.
-- **Through Neon directly** — <https://console.neon.tech> → your project → Connection Details →
+- **Through Neon directly**: <https://console.neon.tech> → your project → Connection Details →
   copy the **pooled** connection string.
 
 ---
@@ -148,7 +148,7 @@ npm run db:init
 
 ## Accounts and sharing
 
-Accounts are [Clerk](https://clerk.com). Signing in is optional — it decides where a sheet lives,
+Accounts are [Clerk](https://clerk.com). Signing in is optional. It decides where a sheet lives,
 not whether you can use the app.
 
 **Taking a sheet never needs an account.** Share links, the take page and the attempts endpoint are
@@ -160,7 +160,7 @@ browser you sign in from, and you can edit it without holding any key.
 
 **Publishing signed out** still works. The sheet gets a secret **edit token**, kept in
 `localStorage` under `marksheet.mine`, which is then the only proof you wrote it. Clear that
-browser's storage and you lose the ability to edit — the share link keeps working.
+browser's storage and you lose the ability to edit, though the share link keeps working.
 
 **Claiming.** Signed in, `/mine` offers to move any sheets this browser published into your account.
 `POST /api/quizzes/<slug>/claim` takes the edit token as proof and only works on a sheet that has no
@@ -170,14 +170,14 @@ owner yet.
 token. Keeping the token path alive on an owned sheet is what makes `/q/<slug>/edit?t=<token>` a
 shareable link for someone helping you write it.
 
-Finished runs are recorded anonymously in `attempts` (score and total only — no answers, no user
+Finished runs are recorded anonymously in `attempts` (score and total only, no answers and no user
 id) to back the "taken N times" line on a sheet.
 
 ### A note on grading
 
 Questions are sent to the browser with their correct answers, and grading happens client-side. That
 is deliberate: instant feedback with no round trip. It also means a determined taker can read the
-answers out of the page source. Marksheet is a study tool, not an exam invigilator — do not use it
+answers out of the page source. Marksheet is a study tool, not an exam invigilator, so do not use it
 for anything that gets a grade.
 
 ---

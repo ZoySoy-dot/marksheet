@@ -28,8 +28,8 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Marksheet — turn plain text into a quiz",
-    template: "%s — Marksheet",
+    default: "Marksheet: turn plain text into a quiz",
+    template: "%s · Marksheet",
   },
   description: "Paste your questions as plain text. Get an interactive quiz you can share with a link.",
 };

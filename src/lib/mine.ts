@@ -2,7 +2,7 @@
  * Sheets you made, remembered on this device.
  *
  * Marksheet has no accounts. The edit token returned when you publish is the
- * only proof you wrote a sheet, so it lives here — losing this browser's
+ * only proof you wrote a sheet, so it lives here. Losing this browser's
  * storage means losing the ability to edit, though the share link keeps working.
  */
 
@@ -36,7 +36,7 @@ function write(list: SavedSheet[]) {
   try {
     localStorage.setItem(KEY, JSON.stringify(list));
   } catch {
-    /* storage is full or blocked — the sheet is still published */
+    /* storage is full or blocked, but the sheet is still published */
   }
 }
 

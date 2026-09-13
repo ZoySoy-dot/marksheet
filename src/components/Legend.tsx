@@ -15,7 +15,7 @@ export default function Legend() {
         Mark two or more answers with <code>*</code> and the question becomes pick-all-that-apply.
       </p>
       <p className="legend-foot">
-        Math stays on one line. Prices survive — <code>$5</code> is prose, <code>$5x$</code> is math.
+        Math stays on one line. Prices survive: <code>$5</code> is prose, <code>$5x$</code> is math.
         Write <code>\$</code> for a stubborn dollar sign.
       </p>
     </div>

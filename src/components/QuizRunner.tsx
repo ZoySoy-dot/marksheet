@@ -9,7 +9,7 @@ type Phase = "ready" | "running" | "report";
 /**
  * Reviewer marks each answer the moment you commit to it, so you learn while
  * you go. Test holds everything back until the end, the way the real paper
- * does — you can still change your mind on the way through.
+ * does, though you can still change your mind on the way through.
  */
 export type Mode = "reviewer" | "test";
 
@@ -129,7 +129,7 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
   const score = results.filter((r) => r.right).length;
   const missed = results.filter((r) => !r.right).map((r) => r.question);
 
-  // Count the finished run against the shared quiz. Best effort — a failed
+  // Count the finished run against the shared quiz. Best effort: a failed
   // count must never interrupt someone's study session.
   useEffect(() => {
     if (phase !== "report" || !slug || posted.current || deck.length === 0) return;
@@ -394,7 +394,7 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
                     <div className="review-row row-right">
                       <dt>Answer</dt>
                       <dd>
-                        <TeXList texts={correctTexts(r.question)} empty="—" />
+                        <TeXList texts={correctTexts(r.question)} empty="None" />
                       </dd>
                     </div>
                   ) : null}

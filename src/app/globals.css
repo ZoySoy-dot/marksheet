@@ -1,7 +1,7 @@
 /* ============================================================
    Marksheet
    The design rule: drop-out ink (the light cyan an OMR scanner
-   cannot see) carries the form's own chrome — labels, rules,
+   cannot see) carries the form's own chrome: labels, rules,
    instructions. Graphite carries content and the marks you make.
    ============================================================ */
 
@@ -138,10 +138,15 @@ a { color: var(--dropout); }
   font-family: var(--ff-display);
   font-weight: 800;
   font-stretch: 118%;
-  font-size: clamp(2.7rem, 8.5vw, 4.4rem);
+  font-size: clamp(2.6rem, 7.5vw, 4.1rem);
   line-height: .88;
   letter-spacing: -.015em;
   text-transform: uppercase;
+  /* body allows mid-word breaks so long answers wrap; display type must not,
+     or a word like ANSWER loses its last letter to the next line. */
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 .display.display-sm { font-size: clamp(1.9rem, 5vw, 2.6rem); }
@@ -282,7 +287,7 @@ kbd {
 
 @media (min-width: 62rem) {
   .sheet {
-    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
     align-items: start;
   }
 }
@@ -838,7 +843,7 @@ kbd {
 
 .drill-count { flex: none; }
 
-/* The progress indicator is a row of bubbles — the same marks
+/* The progress indicator is a row of bubbles, the same marks
    the sheet is made of. It becomes the scored grid on the report. */
 .track {
   list-style: none;
@@ -966,7 +971,7 @@ kbd {
   white-space: nowrap;
 }
 
-/* graded states — never colour alone, each carries a glyph */
+/* graded states: never colour alone, each carries a glyph */
 .opt.is-correct {
   border-color: var(--credit);
   background: var(--credit-soft);

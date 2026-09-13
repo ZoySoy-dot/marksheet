@@ -1,6 +1,6 @@
 export const SAMPLE_TITLE = "Midterm drill";
 
-// String.raw keeps LaTeX backslashes intact — in a normal template literal
+// String.raw keeps LaTeX backslashes intact. In a normal template literal
 // "\frac" would become a form feed followed by "rac".
 export const SAMPLE_SOURCE = String.raw`# Lines starting with # are ignored. Use them for notes to yourself.
 

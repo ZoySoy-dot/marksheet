@@ -2,7 +2,7 @@
  * The brief handed to a chatbot so it writes a sheet Marksheet can read.
  *
  * Written to be pasted into Claude, Gemini or ChatGPT alongside the person's
- * own material — those tools already read PDFs, slides and photos, so there is
+ * own material, since those tools already read PDFs, slides and photos, so there is
  * nothing for Marksheet to parse.
  */
 
