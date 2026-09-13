@@ -1,8 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TeX, { TeXList } from "@/components/TeX";
+import { cardKeysFor } from "@/lib/cardKey";
 import type { Question } from "@/lib/parse";
+import type { SavedRun } from "@/lib/quizzes";
+import { gradeAnswer } from "@/lib/scheduling";
+import { formatDuration, pointsForGrade, scorePercent } from "@/lib/scoring";
 
 type Phase = "ready" | "running" | "report";
 
@@ -60,16 +65,46 @@ type Props = {
   leaveLabel?: string;
   /** A line under the counts on the ready screen, e.g. how often it has been taken. */
   footnote?: string;
+  /** Sits beside Start, e.g. the save button. Ready screen only. */
+  headerAction?: React.ReactNode;
+  /** Shown below the ready screen and the report, e.g. the leaderboard. */
+  aside?: React.ReactNode;
+  /** An unfinished run to offer back. Server-side, so signed in only. */
+  savedRun?: SavedRun | null;
+  /** History and trouble spots. Report screen only. */
+  report?: React.ReactNode;
 };
 
-export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel, footnote }: Props) {
+export default function QuizRunner({
+  title,
+  questions,
+  slug,
+  onLeave,
+  leaveLabel,
+  footnote,
+  headerAction,
+  aside,
+  savedRun,
+  report,
+}: Props) {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("ready");
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [deck, setDeck] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [picks, setPicks] = useState<Record<string, string[]>>({});
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [timings, setTimings] = useState<Record<string, number>>({});
   const posted = useRef(false);
+  // Time actually spent looking at each question, summed across visits so
+  // going back in test mode does not throw the measurement off.
+  const timeRef = useRef<Record<string, number>>({});
+
+  /** Durable per-question identity, taken in the sheet's own order. */
+  const keyByQuestion = useMemo(() => {
+    const keys = cardKeysFor(questions.map((question) => question.text));
+    return new Map(questions.map((question, i) => [question.id, keys[i]]));
+  }, [questions]);
 
   useEffect(() => {
     try {
@@ -110,12 +145,153 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
       list = list.map((q) => ({ ...q, options: shuffle(q.options) }));
     }
     posted.current = false;
+    timeRef.current = {};
+    setTimings({});
     setDeck(list);
     setIndex(0);
     setPicks({});
     setRevealed({});
     setPhase("running");
   }, []);
+
+  // Bank time on the way out of each question, so the clock follows what is
+  // actually on screen rather than the wall clock of the whole run.
+  useEffect(() => {
+    if (phase !== "running") return;
+    const question = deck[index];
+    if (!question) return;
+    const enteredAt = Date.now();
+    return () => {
+      const spent = Date.now() - enteredAt;
+      timeRef.current[question.id] = (timeRef.current[question.id] ?? 0) + spent;
+    };
+  }, [phase, index, deck]);
+
+  // Cleanups run before effects, so the final question is already banked here.
+  useEffect(() => {
+    if (phase !== "report") return;
+    setTimings({ ...timeRef.current });
+  }, [phase]);
+
+  const questionByKey = useMemo(() => {
+    const map = new Map<string, Question>();
+    for (const question of questions) {
+      const key = keyByQuestion.get(question.id);
+      if (key) map.set(key, question);
+    }
+    return map;
+  }, [questions, keyByQuestion]);
+
+  /** Option ids encode their natural position, which is what gets stored. */
+  const optionIndex = (optionId: string) => Number(optionId.slice(optionId.lastIndexOf("o") + 1));
+
+  /** Puts someone back exactly where they stopped, in the same order. */
+  const resume = useCallback(() => {
+    if (!savedRun) return;
+    const list = savedRun.orderKeys
+      .map((key) => questionByKey.get(key))
+      .filter((question): question is Question => Boolean(question));
+    if (list.length === 0) return;
+
+    const restoredPicks: Record<string, string[]> = {};
+    const restoredRevealed: Record<string, boolean> = {};
+    const restoredTimings: Record<string, number> = {};
+
+    for (const question of list) {
+      const key = keyByQuestion.get(question.id);
+      if (!key) continue;
+      const indices = savedRun.picks[key];
+      if (Array.isArray(indices)) {
+        restoredPicks[question.id] = indices
+          .filter((i) => Number.isInteger(i) && i >= 0 && i < question.options.length)
+          .map((i) => `${question.id}o${i}`);
+      }
+      if (savedRun.revealed[key]) restoredRevealed[question.id] = true;
+      const spent = savedRun.timings[key];
+      if (typeof spent === "number" && spent >= 0) restoredTimings[question.id] = spent;
+    }
+
+    posted.current = false;
+    timeRef.current = { ...restoredTimings };
+    setTimings({});
+    setSettings((prev) => ({ ...prev, mode: savedRun.mode }));
+    setDeck(list);
+    setIndex(Math.min(Math.max(0, savedRun.position), list.length - 1));
+    setPicks(restoredPicks);
+    setRevealed(restoredRevealed);
+    setPhase("running");
+  }, [savedRun, questionByKey, keyByQuestion]);
+
+  /**
+   * Saves the position and refreshes the heartbeat that puts this person in the
+   * "taking it now" list. Best effort: losing a beat costs a resume point, not
+   * the run itself.
+   */
+  const saveProgress = useCallback(
+    (finished = false) => {
+      if (!slug) return;
+
+      const body = finished
+        ? { finished: true }
+        : {
+            orderKeys: deck
+              .map((question) => keyByQuestion.get(question.id))
+              .filter((key): key is string => Boolean(key)),
+            picks: Object.fromEntries(
+              deck.flatMap((question) => {
+                const key = keyByQuestion.get(question.id);
+                if (!key) return [];
+                return [[key, (picks[question.id] ?? []).map(optionIndex)]];
+              }),
+            ),
+            revealed: Object.fromEntries(
+              deck.flatMap((question) => {
+                const key = keyByQuestion.get(question.id);
+                return key && revealed[question.id] ? [[key, true]] : [];
+              }),
+            ),
+            timings: Object.fromEntries(
+              deck.flatMap((question) => {
+                const key = keyByQuestion.get(question.id);
+                const spent = timeRef.current[question.id];
+                return key && typeof spent === "number" ? [[key, spent]] : [];
+              }),
+            ),
+            position: index,
+            mode: settings.mode,
+          };
+
+      fetch(`/api/quizzes/${slug}/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        keepalive: true,
+      }).catch(() => {});
+    },
+    [slug, deck, keyByQuestion, picks, revealed, index, settings.mode],
+  );
+
+  // Save shortly after anything changes, so a closed tab loses a second at most.
+  useEffect(() => {
+    if (phase !== "running" || !slug) return;
+    const id = setTimeout(() => saveProgress(), 600);
+    return () => clearTimeout(id);
+  }, [phase, slug, saveProgress]);
+
+  // Keep the heartbeat alive while someone sits on one question thinking.
+  useEffect(() => {
+    if (phase !== "running" || !slug) return;
+    const id = setInterval(() => saveProgress(), 20_000);
+    return () => clearInterval(id);
+  }, [phase, slug, saveProgress]);
+
+  // Finishing clears the run, so it stops being offered back and stops
+  // showing this person as still taking it.
+  useEffect(() => {
+    if (phase !== "report" || !slug) return;
+    saveProgress(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, slug]);
 
   const results = useMemo(
     () =>
@@ -129,6 +305,29 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
   const score = results.filter((r) => r.right).length;
   const missed = results.filter((r) => !r.right).map((r) => r.question);
 
+  /**
+   * No buttons to press: the grade comes from whether the answer was right and
+   * how long it took, with reading time already discounted.
+   */
+  const graded = useMemo(
+    () =>
+      results.map((result) => {
+        const elapsedMs = timings[result.question.id] ?? 0;
+        const grade = gradeAnswer(result.question, { correct: result.right, elapsedMs });
+        return {
+          key: keyByQuestion.get(result.question.id) ?? result.question.id,
+          rating: grade,
+          elapsedMs,
+          correct: result.right,
+          points: pointsForGrade(grade),
+        };
+      }),
+    [results, timings, keyByQuestion],
+  );
+
+  const points = graded.reduce((total, card) => total + card.points, 0);
+  const durationMs = Object.values(timings).reduce((total, ms) => total + ms, 0);
+
   // Count the finished run against the shared quiz. Best effort: a failed
   // count must never interrupt someone's study session.
   useEffect(() => {
@@ -137,10 +336,25 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
     fetch(`/api/quizzes/${slug}/attempts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ score, total: deck.length }),
+      body: JSON.stringify({
+        score,
+        total: deck.length,
+        points,
+        durationMs,
+        cards: graded.map(({ key, rating, elapsedMs, correct }) => ({
+          key,
+          rating,
+          elapsedMs,
+          correct,
+        })),
+      }),
       keepalive: true,
-    }).catch(() => {});
-  }, [phase, slug, score, deck.length]);
+    })
+      // The leaderboard beside the report was rendered before this run
+      // existed. Refresh the server data so it includes it.
+      .then(() => router.refresh())
+      .catch(() => {});
+  }, [phase, slug, score, deck.length, points, durationMs, graded, router]);
 
   const current = deck[index];
 
@@ -208,9 +422,13 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
 
   if (phase === "ready") {
     const multiCount = questions.filter((q) => q.multi).length;
+    // Only offer a resume whose questions still exist in the sheet.
+    const canResume = savedRun
+      ? savedRun.orderKeys.filter((key) => questionByKey.has(key)).length
+      : 0;
     return (
       <>
-        <p className="rubric">Ready when you are</p>
+        
         <h1 className="display display-md ready-title">
           <TeX>{title}</TeX>
         </h1>
@@ -229,7 +447,7 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
         {footnote ? <p className="ready-note">{footnote}</p> : null}
 
         <fieldset className="modes">
-          <legend className="rubric">How it grades you</legend>
+          <legend className="rubric">Mode</legend>
 
           <label className="mode">
             <input
@@ -244,7 +462,7 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
             <span className="mode-body">
               <span className="mode-name">Reviewer</span>
               <span className="mode-note">
-                Marks every answer the moment you commit, and shows the explanation there and then.
+                Marks each answer as you go, with the explanation.
               </span>
             </span>
           </label>
@@ -262,15 +480,14 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
             <span className="mode-body">
               <span className="mode-name">Test</span>
               <span className="mode-note">
-                Tells you nothing until the end. Go back and change answers as much as you like,
-                then grade the whole sheet at once.
+                Nothing until the end. Change answers freely, then grade it all at once.
               </span>
             </span>
           </label>
         </fieldset>
 
         <fieldset className="options">
-          <legend className="rubric">Before you start</legend>
+          <legend className="rubric">Options</legend>
           <label className="switch">
             <input
               type="checkbox"
@@ -292,20 +509,38 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
         </fieldset>
 
         <div className="actions">
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={() => start(questions, settings)}
-            disabled={questions.length === 0}
-          >
-            Start drill
-          </button>
+          {canResume ? (
+            <>
+              <button className="btn btn-primary" type="button" onClick={resume}>
+                Continue from question {Math.min(savedRun!.position + 1, canResume)}
+              </button>
+              <button
+                className="btn btn-quiet"
+                type="button"
+                onClick={() => start(questions, settings)}
+              >
+                Start over
+              </button>
+            </>
+          ) : (
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => start(questions, settings)}
+              disabled={questions.length === 0}
+            >
+              Start quiz
+            </button>
+          )}
+          {headerAction}
           {onLeave ? (
             <button className="btn btn-quiet" type="button" onClick={onLeave}>
               {leaveLabel ?? "Back"}
             </button>
           ) : null}
         </div>
+
+        {aside}
       </>
     );
   }
@@ -317,28 +552,41 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
     const pct = total ? Math.round((score / total) * 100) : 0;
     return (
       <>
-        <div className="report-head">
-          <div>
-            <h1 className="display display-sm">Results</h1>
-            <p className="report-line">
-              {score === total ? (
-                <>
-                  Clean sheet on <TeX>{title}</TeX>.
-                </>
-              ) : (
-                <>
-                  {score} of {total} on <TeX>{title}</TeX>. {missed.length} to go back over.
-                </>
-              )}
-            </p>
-          </div>
-          <div className={`stamp${pct >= 75 ? " is-pass" : ""}`} role="img" aria-label={`Scored ${pct} percent, ${score} of ${total} correct`}>
-            <span className="stamp-pct">{pct}%</span>
-            <span className="stamp-sub">
-              {score} of {total}
-            </span>
-          </div>
+        <div className="report-top">
+          <h1 className="display display-sm">Results</h1>
+          <p className="report-line">
+            {score === total ? (
+              <>
+                Clean sheet on <TeX>{title}</TeX>.
+              </>
+            ) : (
+              <>
+                <TeX>{title}</TeX>. {missed.length} to go back over.
+              </>
+            )}
+          </p>
         </div>
+
+        <dl className="scoreboard">
+          <div className={`score-tile${pct >= 75 ? " is-pass" : ""}`}>
+            <dt>Score</dt>
+            <dd>{pct}%</dd>
+          </div>
+          <div className="score-tile">
+            <dt>Correct</dt>
+            <dd>
+              {score}<span className="score-of">/{total}</span>
+            </dd>
+          </div>
+          <div className="score-tile">
+            <dt>Points</dt>
+            <dd>{points.toLocaleString()}</dd>
+          </div>
+          <div className="score-tile">
+            <dt>Time</dt>
+            <dd>{formatDuration(durationMs)}</dd>
+          </div>
+        </dl>
 
         <ol className="grid">
           {results.map((r, i) => (
@@ -356,13 +604,13 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
             onClick={() => start(missed, settings)}
             disabled={missed.length === 0}
           >
-            Retry the {missed.length} I missed
+            {missed.length === 0 ? "No mistakes to work on" : "Work on my mistakes"}
           </button>
           <button className="btn btn-quiet" type="button" onClick={() => start(questions, settings)}>
-            Run it again
+            Take the whole quiz again
           </button>
           <button className="btn btn-quiet" type="button" onClick={() => setPhase("ready")}>
-            Change settings
+            Change mode
           </button>
           {onLeave ? (
             <button className="btn btn-quiet" type="button" onClick={onLeave}>
@@ -371,8 +619,17 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
           ) : null}
         </div>
 
-        <p className="rubric review-head">Review</p>
-        <ol className="review">
+        {report}
+
+        <section className="panel">
+          <div className="panel-head">
+            <h2 className="panel-title">Every question</h2>
+            <p className="panel-note">
+              {score} right, {missed.length} wrong
+            </p>
+          </div>
+          <div className="panel-body">
+            <ol className="review">
           {results.map((r, i) => (
             <li key={r.question.id} className={`review-item ${r.right ? "is-right" : "is-wrong"}`}>
               <span className="review-mark" aria-hidden="true">
@@ -407,7 +664,11 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
               </div>
             </li>
           ))}
-        </ol>
+            </ol>
+          </div>
+        </section>
+
+        {aside}
       </>
     );
   }

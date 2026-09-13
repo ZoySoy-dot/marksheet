@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { currentUserId } from "@/auth";
 import { NextResponse } from "next/server";
 import { apiError, tokensMatch } from "@/lib/api";
 import { getSql } from "@/lib/db";
@@ -26,7 +26,7 @@ const forbidden = () =>
  * shareable with someone helping you write it.
  */
 async function mayEdit(row: OwnerRow, editToken: unknown): Promise<boolean> {
-  const { userId } = await auth();
+  const userId = await currentUserId();
   if (row.owner_id && userId && row.owner_id === userId) return true;
   return tokensMatch(editToken, row.edit_token);
 }
@@ -45,7 +45,7 @@ export async function GET(_request: Request, { params }: Context) {
     const quiz = await getQuizBySlug(slug);
     if (!quiz) return missing();
 
-    const { userId } = await auth();
+    const userId = await currentUserId();
 
     return NextResponse.json({
       slug: quiz.slug,

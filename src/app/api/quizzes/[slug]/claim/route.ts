@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { currentUserId } from "@/auth";
 import { NextResponse } from "next/server";
 import { apiError, tokensMatch } from "@/lib/api";
 import { getSql } from "@/lib/db";
@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: Context) {
       return NextResponse.json({ error: "No sheet with that link." }, { status: 404 });
     }
 
-    const { userId } = await auth();
+    const userId = await currentUserId();
     if (!userId) {
       return NextResponse.json({ error: "Sign in first to keep a sheet." }, { status: 401 });
     }

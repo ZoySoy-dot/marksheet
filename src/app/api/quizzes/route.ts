@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { currentUserId } from "@/auth";
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
 import { getSql } from "@/lib/db";
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     // Signing in is optional. Without an account the sheet is still published,
     // and the edit token is the only way back into it.
-    const { userId } = await auth();
+    const userId = await currentUserId();
 
     const title = (rawTitle || suggestTitle(questions)).slice(0, MAX_TITLE);
     const sql = getSql();

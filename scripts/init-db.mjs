@@ -12,17 +12,66 @@ if (!url) {
   process.exit(1);
 }
 
+/**
+ * Splits on statement boundaries only. A naive split on ";" breaks the moment a
+ * comment or a string literal contains one, which is exactly what happened.
+ */
+function splitStatements(sql) {
+  const statements = [];
+  let buffer = "";
+  let inLineComment = false;
+  let inString = false;
+
+  for (let i = 0; i < sql.length; i += 1) {
+    const char = sql[i];
+    const nextChar = sql[i + 1];
+
+    if (inLineComment) {
+      buffer += char;
+      if (char === "\n") inLineComment = false;
+      continue;
+    }
+    if (inString) {
+      buffer += char;
+      if (char === "'") inString = false;
+      continue;
+    }
+    if (char === "-" && nextChar === "-") {
+      inLineComment = true;
+      buffer += char;
+      continue;
+    }
+    if (char === "'") {
+      inString = true;
+      buffer += char;
+      continue;
+    }
+    if (char === ";") {
+      statements.push(buffer);
+      buffer = "";
+      continue;
+    }
+    buffer += char;
+  }
+
+  if (buffer.trim()) statements.push(buffer);
+  return statements;
+}
+
 const sql = neon(url);
 const schema = await readFile(new URL("../db/schema.sql", import.meta.url), "utf8");
 
-const statements = schema
-  .split(";")
-  .map((s) => s.trim())
-  .filter((s) => s.length > 0 && !s.split("\n").every((line) => line.trim().startsWith("--")));
+const statements = splitStatements(schema)
+  .map((statement) => statement.trim())
+  .filter(
+    (statement) =>
+      statement.length > 0 &&
+      !statement.split("\n").every((line) => line.trim().startsWith("--")),
+  );
 
 for (const statement of statements) {
-  const label = statement.replace(/\s+/g, " ").slice(0, 70);
-  process.stdout.write(`  ${label}… `);
+  const label = statement.replace(/--[^\n]*/g, "").replace(/\s+/g, " ").trim().slice(0, 66);
+  process.stdout.write(`  ${label}... `);
   await sql.query(statement);
   console.log("ok");
 }

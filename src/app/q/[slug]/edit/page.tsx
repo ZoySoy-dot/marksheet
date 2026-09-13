@@ -1,6 +1,6 @@
 "use client";
 
-import { SignInButton } from "@clerk/nextjs";
+import SignInButton from "@/components/SignInButton";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -88,11 +88,7 @@ export default function EditPage() {
           it, or through an edit link that carries the key.
         </p>
         <div className="actions">
-          <SignInButton mode="modal">
-            <button className="btn btn-primary" type="button">
-              Sign in
-            </button>
-          </SignInButton>
+          <SignInButton className="btn btn-primary">Sign in</SignInButton>
           <Link className="btn btn-quiet" href={`/q/${slug}`}>
             Take this sheet instead
           </Link>
@@ -108,8 +104,8 @@ export default function EditPage() {
         <h1 className="display display-md">Blank sheet</h1>
         <p className="deck">That link does not match any sheet. It may already have been deleted.</p>
         <div className="actions">
-          <Link className="btn btn-primary" href="/">
-            Make a new sheet
+          <Link className="btn btn-primary" href="/new">
+            Make a quiz
           </Link>
         </div>
       </div>
@@ -124,8 +120,8 @@ export default function EditPage() {
         <p>{message}</p>
       </div>
       <div className="actions">
-        <Link className="btn btn-quiet" href="/mine">
-          My sheets
+        <Link className="btn btn-quiet" href="/quizzes">
+          Quizzes
         </Link>
       </div>
     </div>

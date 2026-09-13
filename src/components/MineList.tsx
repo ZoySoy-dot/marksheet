@@ -1,12 +1,11 @@
 "use client";
 
-import { SignInButton } from "@clerk/nextjs";
+import SignInButton from "@/components/SignInButton";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import TeX from "@/components/TeX";
-import { readMine, type SavedSheet } from "@/lib/mine";
-import type { OwnedSheet } from "@/lib/quizzes";
+import { readMine, timeLeftLabel, type SavedSheet } from "@/lib/mine";
+import type { OwnedSheet, SavedSheetRow } from "@/lib/quizzes";
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
@@ -14,14 +13,11 @@ function formatDate(iso: string): string {
   return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-type Props = { signedIn: boolean; sheets: OwnedSheet[] };
+type Props = { signedIn: boolean; sheets: OwnedSheet[]; saved: SavedSheetRow[] };
 
-export default function MineList({ signedIn, sheets }: Props) {
-  const router = useRouter();
+export default function MineList({ signedIn, sheets, saved }: Props) {
   const [local, setLocal] = useState<SavedSheet[] | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const [claiming, setClaiming] = useState(false);
-  const [claimError, setClaimError] = useState<string | null>(null);
 
   useEffect(() => {
     setLocal(readMine());
@@ -45,92 +41,43 @@ export default function MineList({ signedIn, sheets }: Props) {
     }
   };
 
-  const claimAll = async () => {
-    setClaiming(true);
-    setClaimError(null);
-    let failed = 0;
-
-    for (const sheet of unclaimed) {
-      try {
-        const response = await fetch(`/api/quizzes/${sheet.slug}/claim`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ editToken: sheet.editToken }),
-        });
-        if (!response.ok) failed += 1;
-      } catch {
-        failed += 1;
-      }
-    }
-
-    if (failed > 0) {
-      const plural = failed === 1 ? "sheet" : "sheets";
-      setClaimError(`${failed} ${plural} could not be moved. They may already belong to another account.`);
-    }
-
-    setClaiming(false);
-    router.refresh();
-  };
-
-  const nothingAnywhere = local !== null && local.length === 0 && sheets.length === 0;
+  const nothingAnywhere =
+    local !== null && local.length === 0 && sheets.length === 0 && saved.length === 0;
 
   return (
     <div className="screen screen-narrow">
-      <p className="rubric">{signedIn ? "In your account" : "On this device"}</p>
-      <h1 className="display display-md">My sheets</h1>
+      <h1 className="display display-md">Quizzes</h1>
       <p className="deck">
         {signedIn
-          ? "Sheets you published while signed in. They follow you to any browser you sign in from."
-          : "Sheets published from this browser. Sign in to keep them on your account and reach them from anywhere."}
+          ? "Quizzes you made, and ones you saved."
+          : "Made in this browser. Sign in to keep them."}
       </p>
 
       {!signedIn && local !== null && local.length > 0 ? (
         <div className="banner banner-info">
           <p>
-            These sheets live in this browser only. Clear its storage and you lose the ability to
-            edit them, though the share links keep working.
+            These are only remembered by this browser, and only for a few hours. Sign in and they
+            move to your account for good.
           </p>
           <p>
-            <SignInButton mode="modal">
-              <button className="link-btn" type="button">
-                Sign in to keep them
-              </button>
-            </SignInButton>
+            <SignInButton className="link-btn">Sign in with Google</SignInButton>
           </p>
-        </div>
-      ) : null}
-
-      {signedIn && unclaimed.length > 0 ? (
-        <div className="banner banner-info">
-          <p>
-            {unclaimed.length} sheet{unclaimed.length === 1 ? "" : "s"} published from this browser
-            {unclaimed.length === 1 ? " is" : " are"} not on your account yet.
-          </p>
-          <p>
-            <button className="link-btn" type="button" onClick={claimAll} disabled={claiming}>
-              {claiming ? "Moving…" : "Move them to my account"}
-            </button>
-          </p>
-        </div>
-      ) : null}
-
-      {claimError ? (
-        <div className="banner" role="alert">
-          <p>{claimError}</p>
         </div>
       ) : null}
 
       {nothingAnywhere ? (
         <div className="empty">
-          <p>No sheets yet.</p>
-          <Link className="btn btn-primary" href="/">
-            Make your first sheet
+          <p>No quizzes yet.</p>
+          <Link className="btn btn-primary" href="/new">
+            Make your first one
           </Link>
         </div>
       ) : null}
 
       {sheets.length > 0 ? (
-        <ul className="mine-list">
+        <>
+          <p className="rubric section-head">My own quizzes</p>
+          <ul className="mine-list">
           {sheets.map((sheet) => (
             <li key={sheet.slug} className="mine-item">
               <div>
@@ -160,12 +107,13 @@ export default function MineList({ signedIn, sheets }: Props) {
               </div>
             </li>
           ))}
-        </ul>
+          </ul>
+        </>
       ) : null}
 
       {unclaimed.length > 0 ? (
         <>
-          {sheets.length > 0 ? <p className="rubric review-head">On this device only</p> : null}
+          <p className="rubric section-head">Made in this browser</p>
           <ul className="mine-list">
             {unclaimed.map((sheet) => (
               <li key={sheet.slug} className="mine-item">
@@ -176,8 +124,8 @@ export default function MineList({ signedIn, sheets }: Props) {
                     </Link>
                   </p>
                   <p className="mine-meta">
-                    {sheet.questionCount} question{sheet.questionCount === 1 ? "" : "s"}
-                    {sheet.createdAt ? ` · ${formatDate(sheet.createdAt)}` : ""}
+                    {sheet.questionCount} question{sheet.questionCount === 1 ? "" : "s"} · editable
+                    here for {timeLeftLabel(sheet)}
                   </p>
                 </div>
                 <div className="mine-links">
@@ -186,6 +134,42 @@ export default function MineList({ signedIn, sheets }: Props) {
                   </Link>
                   <Link className="link-btn" href={`/q/${sheet.slug}/edit?t=${sheet.editToken}`}>
                     Edit
+                  </Link>
+                  <button className="link-btn" type="button" onClick={() => copyLink(sheet.slug)}>
+                    {copied === sheet.slug ? "Copied" : "Copy link"}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      <Link className="new-fab" href="/new" aria-label="Make a new quiz">
+        <span className="new-fab-plus" aria-hidden="true">+</span>
+        <span className="new-fab-label">New quiz</span>
+      </Link>
+
+      {saved.length > 0 ? (
+        <>
+          <p className="rubric section-head">From other people</p>
+          <ul className="mine-list">
+            {saved.map((sheet) => (
+              <li key={sheet.slug} className="mine-item">
+                <div>
+                  <p className="mine-title">
+                    <Link href={`/q/${sheet.slug}`}>
+                      <TeX>{sheet.title}</TeX>
+                    </Link>
+                  </p>
+                  <p className="mine-meta">
+                    {sheet.questionCount} question{sheet.questionCount === 1 ? "" : "s"}
+                    {sheet.savedAt ? ` · saved ${formatDate(sheet.savedAt)}` : ""}
+                  </p>
+                </div>
+                <div className="mine-links">
+                  <Link className="link-btn" href={`/q/${sheet.slug}`}>
+                    Take it
                   </Link>
                   <button className="link-btn" type="button" onClick={() => copyLink(sheet.slug)}>
                     {copied === sheet.slug ? "Copied" : "Copy link"}
