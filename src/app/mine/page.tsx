@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import TeX from "@/components/TeX";
 import { readMine, type SavedSheet } from "@/lib/mine";
 
 function formatDate(iso: string): string {
@@ -51,7 +52,9 @@ export default function MinePage() {
             <li key={sheet.slug} className="mine-item">
               <div>
                 <p className="mine-title">
-                  <Link href={`/q/${sheet.slug}`}>{sheet.title}</Link>
+                  <Link href={`/q/${sheet.slug}`}>
+                    <TeX>{sheet.title}</TeX>
+                  </Link>
                 </p>
                 <p className="mine-meta">
                   {sheet.questionCount} question{sheet.questionCount === 1 ? "" : "s"}

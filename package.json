@@ -7,16 +7,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --experimental-strip-types --test scripts/parse.test.ts",
+    "test": "node --experimental-strip-types --test scripts/parse.test.ts scripts/tex.test.ts",
     "db:init": "node --env-file=.env.local scripts/init-db.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
+    "katex": "^0.18.7",
     "next": "^15.5.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@types/katex": "^0.16.8",
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",

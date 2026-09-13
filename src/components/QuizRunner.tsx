@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import TeX, { TeXList } from "@/components/TeX";
 import type { Question } from "@/lib/parse";
 
 type Phase = "ready" | "running" | "report";
@@ -36,10 +37,11 @@ function isRight(question: Question, picked: readonly string[]): boolean {
   return correct.every((o) => set.has(o.id));
 }
 
-function optionText(question: Question, ids: readonly string[]): string {
-  const chosen = question.options.filter((o) => ids.includes(o.id));
-  return chosen.length ? chosen.map((o) => o.text).join(", ") : "Nothing marked";
-}
+const pickedTexts = (question: Question, ids: readonly string[]) =>
+  question.options.filter((o) => ids.includes(o.id)).map((o) => o.text);
+
+const correctTexts = (question: Question) =>
+  question.options.filter((o) => o.correct).map((o) => o.text);
 
 type Props = {
   title: string;
@@ -190,7 +192,9 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
     return (
       <>
         <p className="rubric">Ready when you are</p>
-        <h1 className="display display-md ready-title">{title}</h1>
+        <h1 className="display display-md ready-title">
+          <TeX>{title}</TeX>
+        </h1>
 
         <div className="ready-meta">
           <p className="figure">
@@ -266,9 +270,15 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
           <div>
             <h1 className="display display-sm">Results</h1>
             <p className="report-line">
-              {score === total
-                ? `Clean sheet on ${title}.`
-                : `${score} of ${total} on ${title}. ${missed.length} to go back over.`}
+              {score === total ? (
+                <>
+                  Clean sheet on <TeX>{title}</TeX>.
+                </>
+              ) : (
+                <>
+                  {score} of {total} on <TeX>{title}</TeX>. {missed.length} to go back over.
+                </>
+              )}
             </p>
           </div>
           <div className={`stamp${pct >= 75 ? " is-pass" : ""}`} role="img" aria-label={`Scored ${pct} percent, ${score} of ${total} correct`}>
@@ -320,26 +330,29 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
               <div>
                 <p className="review-q">
                   <span className="sr-only">{r.right ? "Correct. " : "Wrong. "}</span>
-                  {i + 1}. {r.question.text}
+                  {i + 1}. <TeX>{r.question.text}</TeX>
                 </p>
                 <dl className="review-rows">
                   <div className="review-row row-yours">
                     <dt>You marked</dt>
-                    <dd>{optionText(r.question, r.picked)}</dd>
+                    <dd>
+                      <TeXList texts={pickedTexts(r.question, r.picked)} empty="Nothing marked" />
+                    </dd>
                   </div>
                   {!r.right ? (
                     <div className="review-row row-right">
                       <dt>Answer</dt>
                       <dd>
-                        {r.question.options
-                          .filter((o) => o.correct)
-                          .map((o) => o.text)
-                          .join(", ")}
+                        <TeXList texts={correctTexts(r.question)} empty="—" />
                       </dd>
                     </div>
                   ) : null}
                 </dl>
-                {r.question.note ? <p className="review-note">{r.question.note}</p> : null}
+                {r.question.note ? (
+                  <p className="review-note">
+                    <TeX>{r.question.note}</TeX>
+                  </p>
+                ) : null}
               </div>
             </li>
           ))}
@@ -385,7 +398,7 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
 
         <h1 className="qtext">
           <span className="qnum">{String(index + 1).padStart(2, "0")}</span>
-          {current.text}
+          <TeX>{current.text}</TeX>
         </h1>
 
         <div className="opts" role="group" aria-label={current.multi ? "Pick all that apply" : "Pick one"}>
@@ -421,14 +434,20 @@ export default function QuizRunner({ title, questions, slug, onLeave, leaveLabel
                 <span className="opt-key" aria-hidden="true">
                   {LETTERS[i] ?? "•"}
                 </span>
-                <span className="opt-text">{option.text}</span>
+                <span className="opt-text">
+                  <TeX>{option.text}</TeX>
+                </span>
                 <span className="opt-verdict">{verdict}</span>
               </label>
             );
           })}
         </div>
 
-        {isRevealed && current.note ? <p className="note">{current.note}</p> : null}
+        {isRevealed && current.note ? (
+          <p className="note">
+            <TeX>{current.note}</TeX>
+          </p>
+        ) : null}
       </div>
 
       <div className="actions">

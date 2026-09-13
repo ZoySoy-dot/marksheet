@@ -813,7 +813,7 @@ kbd {
   width: 1ch;
 }
 
-.opt-text { font-size: 1rem; line-height: 1.45; }
+.opt-text { font-size: 1rem; line-height: 1.45; min-width: 0; }
 
 .opt-verdict {
   font-family: var(--ff-mono);
@@ -1101,6 +1101,32 @@ kbd {
   font-size: .66rem;
   letter-spacing: .06em;
   color: var(--graphite-3);
+}
+
+/* ---------- math ---------- */
+
+/* KaTeX sets its own colour-free styling, so equations inherit graphite and
+   flip with the theme for free. */
+.katex { font-size: 1.04em; }
+
+/* A long equation scrolls inside its own line rather than widening the page. */
+.katex-display {
+  margin: .5em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: .25em 0;
+}
+
+.qtext .katex-display { margin: .4em 0 .15em; }
+.note .katex-display,
+.review-note .katex-display { margin: .35em 0; }
+
+.tex-error {
+  color: var(--score);
+  background: var(--score-soft);
+  border-radius: 2px;
+  padding: .05em .3em;
+  font-size: .92em;
 }
 
 /* ---------- narrow ---------- */

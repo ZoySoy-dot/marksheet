@@ -3,6 +3,7 @@ import { apiError } from "@/lib/api";
 import { getSql } from "@/lib/db";
 import { makeEditToken, makeSlug } from "@/lib/ids";
 import { parseSheet, suggestTitle } from "@/lib/parse";
+import { findTexProblems } from "@/lib/tex";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const { questions, problems } = parseSheet(source);
+    const parsed = parseSheet(source);
+    const questions = parsed.questions;
+    const problems = [...parsed.problems, ...findTexProblems(source)].sort((a, b) => a.line - b.line);
 
     if (questions.length === 0 && problems.length === 0) {
       return NextResponse.json({ error: "This sheet has no questions yet." }, { status: 400 });

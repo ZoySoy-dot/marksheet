@@ -33,10 +33,43 @@ Q: Which of these are prime?
 | `-` | a wrong answer |
 | `>` | a note shown after answering (optional, repeatable) |
 | `#` | a line to ignore |
+| `$…$` | LaTeX, typeset inline |
+| `$$…$$` | LaTeX, centred on its own line |
 
 Two or more answers marked `*` make the question **pick all that apply**. Blank lines are ignored.
 
 A sheet will not publish while the editor reports problems. Each problem names the line to fix.
+
+---
+
+## Math
+
+LaTeX is rendered with [KaTeX](https://katex.org), in questions, answers, notes and titles.
+
+```
+Q: Solve for $x$: $x^2 - 5x + 6 = 0$
+* $x = 2$ or $x = 3$
+- $x = 1$ or $x = 6$
+> Factor it: $(x - 2)(x - 3) = 0$.
+
+Q: Evaluate $$\int_0^1 3x^2 \, dx$$
+* $1$
+- $\frac{1}{3}$
+```
+
+Three rules worth knowing:
+
+- **Math stays on one line.** The format is line-based, so a question or an answer is always a
+  single line. `$$…$$` still renders centred — it just has to open and close on the same line.
+- **Prices survive.** Inline math only opens and closes on a non-space character, so `it costs $5
+  and $10` is prose while `$5x$ and $10y$` is math. Write `\$` for a dollar sign that refuses to
+  behave.
+- **Broken LaTeX is caught before publishing.** It is reported by line number next to the format
+  problems, so `\fraq{1}{2}` on line 12 reads *"Line 12: LaTeX: Undefined control sequence"*.
+
+Author text is HTML-escaped before rendering, and KaTeX runs with `trust: false` — a shared sheet
+cannot inject markup into someone else's browser. KaTeX emits MathML alongside its visual output,
+so equations are readable by screen readers.
 
 ---
 
@@ -111,9 +144,11 @@ src/
   components/
     Composer.tsx                      editor, live parse readout, publish
     QuizRunner.tsx                    ready → running → report
+    TeX.tsx                           renders $…$ and $$…$$ safely
     Legend.tsx, Masthead.tsx, SetupNotice.tsx
   lib/
     parse.ts                          the format, and its error messages
+    tex.ts                            math splitting, rendering, validation
     quizzes.ts                        reads
     db.ts, ids.ts, api.ts, mine.ts, sample.ts
 db/schema.sql                         tables

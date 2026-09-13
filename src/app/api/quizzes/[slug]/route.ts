@@ -4,6 +4,7 @@ import { getSql } from "@/lib/db";
 import { SLUG_PATTERN } from "@/lib/ids";
 import { parseSheet, suggestTitle } from "@/lib/parse";
 import { getQuizBySlug } from "@/lib/quizzes";
+import { findTexProblems } from "@/lib/tex";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,7 +64,10 @@ export async function PATCH(request: Request, { params }: Context) {
     if (!row) return missing();
     if (!tokensMatch(body.editToken, row.edit_token)) return forbidden();
 
-    const { questions, problems } = parseSheet(source);
+    const parsed = parseSheet(source);
+    const questions = parsed.questions;
+    const problems = [...parsed.problems, ...findTexProblems(source)].sort((a, b) => a.line - b.line);
+
     if (questions.length === 0) {
       return NextResponse.json({ error: "This sheet has no questions yet." }, { status: 400 });
     }

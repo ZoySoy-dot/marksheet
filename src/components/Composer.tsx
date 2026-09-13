@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Legend from "@/components/Legend";
 import QuizRunner from "@/components/QuizRunner";
 import { parseSheet, suggestTitle } from "@/lib/parse";
+import { findTexProblems } from "@/lib/tex";
 import { SAMPLE_SOURCE, SAMPLE_TITLE } from "@/lib/sample";
 import { forgetSheet, rememberSheet } from "@/lib/mine";
 
@@ -32,7 +33,13 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
   const [published, setPublished] = useState<Published | null>(null);
   const urlField = useRef<HTMLInputElement>(null);
 
-  const { questions, problems, multiCount } = useMemo(() => parseSheet(source), [source]);
+  // Broken LaTeX is reported the same way a malformed line is: by line number,
+  // and it blocks publishing.
+  const { questions, problems, multiCount } = useMemo(() => {
+    const parsed = parseSheet(source);
+    const merged = [...parsed.problems, ...findTexProblems(source)].sort((a, b) => a.line - b.line);
+    return { ...parsed, problems: merged };
+  }, [source]);
   const ready = questions.length > 0 && problems.length === 0;
   const effectiveTitle = title.trim() || suggestTitle(questions);
 
@@ -239,7 +246,7 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
             aria-describedby="readout"
             onChange={(e) => setSource(e.target.value)}
             placeholder={
-              "Q: What is the capital of France?\n- London\n- Berlin\n* Paris\n\nQ: Which of these are prime?\n* 2\n- 4\n* 7\n- 9\n> A prime has exactly two divisors: 1 and itself."
+              "Q: What is the capital of France?\n- London\n- Berlin\n* Paris\n\nQ: Solve $x^2 - 5x + 6 = 0$\n* $x = 2$ or $x = 3$\n- $x = 1$ or $x = 6$\n- No real solutions\n> Factor it: $(x - 2)(x - 3) = 0$."
             }
           />
 

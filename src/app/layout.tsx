@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Archivo, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import Masthead from "@/components/Masthead";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 const archivo = Archivo({
