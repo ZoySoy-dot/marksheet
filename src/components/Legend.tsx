@@ -1,0 +1,17 @@
+export default function Legend() {
+  return (
+    <div className="legend">
+      <p className="rubric">How to mark</p>
+      <dl className="legend-list">
+        <div className="legend-row"><dt><code>Q:</code></dt><dd>starts a question</dd></div>
+        <div className="legend-row"><dt><code>*</code></dt><dd>a correct answer</dd></div>
+        <div className="legend-row"><dt><code>-</code></dt><dd>a wrong answer</dd></div>
+        <div className="legend-row"><dt><code>&gt;</code></dt><dd>a note shown after answering</dd></div>
+        <div className="legend-row"><dt><code>#</code></dt><dd>a line to ignore</dd></div>
+      </dl>
+      <p className="legend-foot">
+        Mark two or more answers with <code>*</code> and the question becomes pick-all-that-apply.
+      </p>
+    </div>
+  );
+}
