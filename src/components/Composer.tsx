@@ -151,7 +151,7 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
   };
 
   const saveChanges = async () => {
-    if (!slug || !editToken) return;
+    if (!slug) return;
     setBusy(true);
     setError(null);
     try {
@@ -162,13 +162,16 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Could not save your changes.");
-      rememberSheet({
-        slug,
-        title: data.title,
-        editToken,
-        questionCount: data.questionCount,
-        createdAt: new Date().toISOString(),
-      });
+      // Only worth remembering locally while the quiz has no account behind it.
+      if (editToken) {
+        rememberSheet({
+          slug,
+          title: data.title,
+          editToken,
+          questionCount: data.questionCount,
+          createdAt: new Date().toISOString(),
+        });
+      }
       setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save your changes.");
@@ -178,7 +181,7 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
   };
 
   const remove = async () => {
-    if (!slug || !editToken) return;
+    if (!slug) return;
     if (!window.confirm("Delete this quiz? The share link stops working for everyone.")) return;
     setBusy(true);
     setError(null);
