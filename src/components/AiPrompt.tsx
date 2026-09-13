@@ -31,36 +31,30 @@ export default function AiPrompt() {
 
   return (
     <div className="screen screen-narrow">
-      <p className="rubric">Write it with a chatbot</p>
       <h1 className="display display-md">Reviewer in, sheet out</h1>
       <p className="deck">
-        Claude, Gemini and ChatGPT already read PDFs, slides and photos of your notes. Hand one of
-        them this brief along with your reviewer, and it writes the sheet in the format Marksheet
-        reads.
+        Claude, Gemini and ChatGPT already read PDFs and photos. Give one this brief with your
+        notes attached, and it hands back a file you can upload straight here.
       </p>
 
       <ol className="steps">
         <li>
           <p className="step-name">Copy the brief</p>
-          <p className="step-note">It carries the whole format, including the maths rules.</p>
+          <p className="step-note">It carries the whole format.</p>
         </li>
         <li>
           <p className="step-name">Paste it into the chatbot with your reviewer</p>
-          <p className="step-note">
-            Attach the PDF or photos in the same message. No need to retype anything.
-          </p>
+          <p className="step-note">Attach the PDF or photos in the same message.</p>
         </li>
         <li>
-          <p className="step-name">Paste the reply into the editor</p>
+          <p className="step-name">Upload the file it gives you</p>
           <p className="step-note">
-            The readout checks every line as you paste. Fix anything it flags, then publish.
+            Download marksheet.md, then drop it into Upload a file. Pasting the text works too.
           </p>
         </li>
       </ol>
 
-      <div className="field-head">
-        <p className="rubric">How many questions</p>
-      </div>
+      <p className="rubric">How many questions</p>
       <div className="count-row">
         {COUNTS.map((option) => (
           <button
@@ -91,7 +85,7 @@ export default function AiPrompt() {
         ))}
       </div>
 
-      <p className="rubric review-head">The brief</p>
+      <p className="rubric">The brief</p>
       <textarea
         ref={promptBox}
         className="source prompt-box"
@@ -102,14 +96,11 @@ export default function AiPrompt() {
       />
 
       <div className="banner banner-info">
-        <p>
-          Read what comes back before you publish it. A chatbot will occasionally be confidently
-          wrong about your material, and a sheet that drills the wrong answer is worse than no sheet.
-        </p>
+        <p>Read it before publishing. A sheet that drills the wrong answer is worse than none.</p>
       </div>
 
       <div className="actions">
-        <Link className="btn btn-primary" href="/">
+        <Link className="btn btn-primary" href="/new">
           Open the editor
         </Link>
       </div>

@@ -19,14 +19,19 @@ export function buildPrompt({ count }: PromptOptions): string {
 
   return `You are turning my study material into a quiz for Marksheet.
 
-Reply with ONLY the quiz in the format below. No preamble, no sign-off, no explanation, no code fences.
+Give it to me as a downloadable Markdown file called marksheet.md.
+
+That file must contain the quiz and nothing else: no title, no heading, no introduction, no closing remarks, no code fences. Just the lines described below, starting with the first "Q:".
+
+If you cannot attach a file, print the same content as plain text instead.
 
 FORMAT
 
 Q: the question
 * a correct answer
 - a wrong answer
-> an optional note explaining the answer, shown after the person answers
+> an optional explanation, shown after the person answers
+> repeat the > line for a second paragraph, a worked step, a caveat
 
 RULES
 
@@ -36,7 +41,9 @@ RULES
 - Exactly one "*" makes it a pick-one question.
 - Two or more "*" makes it pick-all-that-apply. Use this where the material genuinely supports it.
 - Never mark every answer correct. Every question needs at least one "-".
-- Lines starting with ">" are optional notes. Use one to say why the answer is right. They are shown after the person answers, so this is where the teaching happens.
+- Lines starting with ">" are the explanation, shown after the person answers. This is where the teaching happens, so do not be stingy with it.
+- Use as many ">" lines as the explanation needs. Each one becomes its own line. Walk through the working, name the trap the wrong answers set, add the rule or formula worth memorising. Two to five lines is normal for anything with reasoning in it.
+- One thing per ">" line. Do not cram a whole derivation onto one line.
 - Separate questions with a blank line.
 - Keep every question and every answer on ONE line. No line breaks inside them.
 
@@ -62,13 +69,17 @@ Q: Which layer of the OSI model does a router operate at?
 - Layer 2, data link
 * Layer 3, network
 - Layer 4, transport
-> Routers forward packets using IP addresses, which live at layer 3.
+> Routers forward packets using IP addresses, and IP lives at layer 3.
+> Layer 2 is the switch's job: it forwards by MAC address inside one network.
+> If you are deciding between them, ask whether the device needs to cross networks. That is layer 3.
 
 Q: Which of these series converge?
 * $\\sum_{n=1}^{\\infty} \\frac{1}{n^2}$
 - $\\sum_{n=1}^{\\infty} \\frac{1}{n}$
 * $\\sum_{n=1}^{\\infty} \\frac{1}{2^n}$
-> A $p$-series converges when $p > 1$. The harmonic series diverges.
+> A $p$-series $sum 1/n^p$ converges exactly when $p > 1$.
+> So $1/n^2$ converges and $1/n$ does not, even though both shrink to zero.
+> $sum 1/2^n$ is geometric with ratio $1/2$, so it converges to 1.
 
 My material follows.`;
 }
