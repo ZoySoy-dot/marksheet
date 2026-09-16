@@ -1790,6 +1790,8 @@ body > .ML__keyboard { z-index: 40; }
 .banner.banner-info { border-color: var(--border); background: var(--surface-2); }
 .banner p { margin: 0; }
 .banner p + p { margin-top: .4rem; }
+/* A banner that asks for something needs room between the ask and the button. */
+.banner > .btn { margin-top: .7rem; }
 
 .share {
   margin-top: 1.5rem;

@@ -2,9 +2,18 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import SignInButton from "@/components/SignInButton";
+import { COUNTS, type ImportMode } from "@/lib/importModes";
 
-const MAX_BYTES = 400_000;
-const ACCEPT = ".txt,.text,.md,.markdown,text/plain,text/markdown";
+/** Plain text is read here in the browser, so it can be generous and instant. */
+const MAX_TEXT_BYTES = 400_000;
+/** A document has to cross the wire and be read by a model, so it cannot be. */
+const MAX_DOC_BYTES = 20_000_000;
+
+const ACCEPT =
+  ".txt,.text,.md,.markdown,.pdf,.png,.jpg,.jpeg,.webp,text/plain,text/markdown,application/pdf,image/png,image/jpeg,image/webp";
+
+const TEXT_NAME = /\.(txt|text|md|markdown)$/i;
 
 // Built from char codes rather than written as escapes, so no control
 // character ever ends up embedded in this file.
@@ -12,23 +21,43 @@ const NUL = String.fromCharCode(0);
 const REPLACEMENT = String.fromCharCode(0xfffd);
 const GARBLED = new RegExp(REPLACEMENT + "{3,}");
 
-type Props = {
-  /** Called with the file's contents once it reads cleanly. */
-  onLoaded: (text: string, filename: string) => void;
+const MODE_LABEL: Record<ImportMode, string> = {
+  read: "Read its questions",
+  write: "Write questions from it",
 };
 
+const MODE_HINT: Record<ImportMode, string> = {
+  read: "A paper that already has questions.",
+  write: "Notes, slides or a chapter.",
+};
+
+type Props = {
+  /** Called with the sheet's source once the file reads cleanly. */
+  onLoaded: (text: string, filename: string, title?: string) => void;
+};
+
+/**
+ * Three ways in, decided by the file and by what is being asked of it.
+ *
+ * A .txt or .md that already holds the format is read locally and costs
+ * nothing. Everything else goes to /api/import, either to have its questions
+ * transcribed or to have new ones written about it. The local path is offered
+ * for reading only, because the same .txt is study material rather than a
+ * sheet the moment the job is to write questions from it.
+ */
 export default function SourceUpload({ onLoaded }: Props) {
+  const [mode, setMode] = useState<ImportMode>("read");
+  const [count, setCount] = useState(20);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsAccount, setNeedsAccount] = useState(false);
+  const [reading, setReading] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
 
-  const take = async (file: File | undefined) => {
-    if (!file) return;
-    setError(null);
-
-    if (file.size > MAX_BYTES) {
+  const readLocally = async (file: File) => {
+    if (file.size > MAX_TEXT_BYTES) {
       setError(
-        `${file.name} is ${Math.round(file.size / 1024)} KB. The limit is ${MAX_BYTES / 1000} KB.`,
+        `${file.name} is ${Math.round(file.size / 1024)} KB. The limit is ${MAX_TEXT_BYTES / 1000} KB.`,
       );
       return;
     }
@@ -55,8 +84,85 @@ export default function SourceUpload({ onLoaded }: Props) {
     onLoaded(text, file.name);
   };
 
+  const readWithAi = async (file: File) => {
+    if (file.size > MAX_DOC_BYTES) {
+      setError(
+        `${file.name} is ${Math.round(file.size / 1_000_000)} MB. The limit is ${MAX_DOC_BYTES / 1_000_000} MB.`,
+      );
+      return;
+    }
+
+    setReading(file.name);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("mode", mode);
+      if (mode === "write") body.append("count", String(count));
+
+      const response = await fetch("/api/import", { method: "POST", body });
+      const payload = (await response.json()) as {
+        source?: string;
+        title?: string;
+        error?: string;
+      };
+
+      if (response.status === 401) {
+        setNeedsAccount(true);
+        return;
+      }
+      if (!response.ok || !payload.source) {
+        setError(payload.error ?? "That document could not be read.");
+        return;
+      }
+
+      onLoaded(payload.source, file.name, payload.title);
+    } catch {
+      setError("That document could not be read. Check your connection and try again.");
+    } finally {
+      setReading(null);
+    }
+  };
+
+  const take = async (file: File | undefined) => {
+    if (!file) return;
+    setError(null);
+    setNeedsAccount(false);
+
+    // Trust the name over the browser's guess at the type: Windows serves .md
+    // as application/octet-stream often enough to matter.
+    const isText = TEXT_NAME.test(file.name) || file.type.startsWith("text/");
+    await (mode === "read" && isText ? readLocally(file) : readWithAi(file));
+  };
+
+  if (reading) {
+    return (
+      <div className="upload">
+        <div className="dropzone" aria-busy="true">
+          <p className="dropzone-lead">Reading {reading}</p>
+          <p className="dropzone-sub">
+            {mode === "write" ? "Writing questions about it." : "Finding the questions and the key."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="upload">
+      <div className="seg seg-kind" role="group" aria-label="What to do with the file">
+        {(Object.keys(MODE_LABEL) as ImportMode[]).map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={`seg-btn${mode === option ? " is-picked" : ""}`}
+            aria-pressed={mode === option}
+            onClick={() => setMode(option)}
+          >
+            {MODE_LABEL[option]}
+          </button>
+        ))}
+      </div>
+
       <div
         className={`dropzone${dragging ? " is-dragging" : ""}`}
         onDragOver={(event) => {
@@ -70,8 +176,8 @@ export default function SourceUpload({ onLoaded }: Props) {
           void take(event.dataTransfer.files[0]);
         }}
       >
-        <p className="dropzone-lead">Drop a text file</p>
-        <p className="dropzone-sub">.txt or .md, up to {MAX_BYTES / 1000} KB.</p>
+        <p className="dropzone-lead">Drop a file</p>
+        <p className="dropzone-sub">{MODE_HINT[mode]} PDF, photo or text.</p>
         <button className="btn btn-quiet" type="button" onClick={() => picker.current?.click()}>
           Choose a file
         </button>
@@ -88,6 +194,29 @@ export default function SourceUpload({ onLoaded }: Props) {
         />
       </div>
 
+      {mode === "write" ? (
+        <div className="count-row">
+          {COUNTS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={`count-btn${count === option ? " is-picked" : ""}`}
+              aria-pressed={count === option}
+              onClick={() => setCount(option)}
+            >
+              {option === 0 ? "As many as it supports" : option}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {needsAccount ? (
+        <div className="banner banner-info" role="alert">
+          <p>Reading a document needs an account.</p>
+          <SignInButton />
+        </div>
+      ) : null}
+
       {error ? (
         <div className="banner" role="alert">
           <p>{error}</p>
@@ -95,7 +224,14 @@ export default function SourceUpload({ onLoaded }: Props) {
       ) : null}
 
       <p className="upload-note">
-        Got a PDF or photos? <Link href="/ai">Use AI</Link> instead.
+        {mode === "write" ? (
+          "Read what comes back before publishing. A model can be confidently wrong."
+        ) : (
+          <>
+            Include the answer key pages. Writing from scratch instead?{" "}
+            <Link href="/ai">Use a chatbot</Link>.
+          </>
+        )}
       </p>
     </div>
   );

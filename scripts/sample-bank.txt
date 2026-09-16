@@ -1,0 +1,46 @@
+CIVIL ENGINEERING REVIEW - HYDRAULICS
+Practice Set 3
+
+1. The specific weight of water at 4 degrees Celsius is approximately:
+   A. 9.81 kN/m3
+   B. 1000 kN/m3
+   C. 62.4 kN/m3
+   D. 9810 kN/m3
+
+2. Bernoulli's equation is a statement of the conservation of:
+   A. mass
+   B. momentum
+   C. energy
+   D. angular momentum
+
+3. A fluid at rest exerts pressure on a submerged surface that acts:
+   A. parallel to the surface
+   B. normal to the surface
+   C. at 45 degrees to the surface
+   D. in the direction of flow
+
+4. Which of the following are dimensionless quantities? (Select all that apply.)
+   A. Reynolds number
+   B. Froude number
+   C. Kinematic viscosity
+   D. Specific gravity
+
+5. Write the formula for the hydrostatic force on a vertical plane surface.
+
+6. The continuity equation for steady incompressible flow states that A1V1 equals:
+   A. A2V2
+   B. A2/V2
+   C. V2/A2
+   D. A1/V1
+
+... (further questions omitted from this excerpt)
+
+--------------------------------------------------------
+ANSWER KEY - PRACTICE SET 3
+
+1. A     Water weighs 9.81 kN per cubic metre. 1000 is its density in kg/m3, not its weight.
+2. C     It is the energy equation for an ideal fluid along a streamline.
+3. B     Pressure in a static fluid has no shear component, so it acts normal to any surface.
+4. A, B, D   Kinematic viscosity carries units of m2/s and is therefore not dimensionless.
+5. F = (gamma)(h-bar)(A), where h-bar is the depth to the centroid.
+6. A

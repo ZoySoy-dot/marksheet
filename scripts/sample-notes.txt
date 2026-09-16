@@ -1,0 +1,32 @@
+CHEM 102 - Lecture 7: Chemical Kinetics
+
+Reaction rate is the change in concentration of a reactant or product per unit time.
+For aA + bB -> cC, rate = -(1/a)d[A]/dt = (1/c)d[C]/dt.
+
+RATE LAWS
+The rate law is rate = k[A]^m[B]^n. The exponents m and n are the reaction orders
+with respect to each reactant. They are determined experimentally and are NOT the
+stoichiometric coefficients. The overall order is m + n.
+
+The rate constant k depends on temperature but not on concentration.
+
+INTEGRATED RATE LAWS
+Zero order:   [A]t = -kt + [A]0      plot [A] vs t is linear
+First order:  ln[A]t = -kt + ln[A]0  plot ln[A] vs t is linear
+Second order: 1/[A]t = kt + 1/[A]0   plot 1/[A] vs t is linear
+
+HALF LIFE
+For a first order reaction the half life is t(1/2) = 0.693/k, and it is independent
+of the starting concentration. This is why first order half lives are constant.
+For second order, t(1/2) = 1/(k[A]0), which does depend on starting concentration.
+
+COLLISION THEORY AND ACTIVATION ENERGY
+Molecules must collide with sufficient energy and correct orientation to react.
+The minimum energy required is the activation energy, Ea.
+The Arrhenius equation is k = A*exp(-Ea/RT), where A is the frequency factor.
+Raising temperature increases k because a larger fraction of molecules exceed Ea.
+
+CATALYSTS
+A catalyst increases reaction rate by providing an alternative pathway with a lower
+activation energy. It is not consumed in the reaction and does not change the
+position of equilibrium or the enthalpy change of the reaction.

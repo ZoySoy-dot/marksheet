@@ -79,9 +79,8 @@ so equations are readable by screen readers.
 with your reviewer (they read PDFs, slides and photos of notes natively) and paste the reply into
 the editor.
 
-Marksheet does not call any model itself. There is no API key to manage, nothing to pay for, and no
-upload to parse, because the chatbot you already use does all three. The brief is built in
-`src/lib/aiPrompt.ts`; the question count is the only knob.
+This path costs Marksheet nothing and has no quota, because the chatbot you already pay for does
+the reading. The brief is built in `src/lib/aiPrompt.ts`; the question count is the only knob.
 
 The parser ignores code-fence lines, since chatbots wrap their answer in one however firmly the
 brief asks them not to.
@@ -89,12 +88,47 @@ brief asks them not to.
 > A model will occasionally be confidently wrong about your material. Read what comes back before
 > publishing. A sheet that drills the wrong answer is worse than no sheet.
 
-### Why not a built-in generator?
+---
 
-A Claude Pro or Gemini Advanced subscription cannot be linked to a third-party site; neither
-provider offers consumer-account OAuth for this. The alternatives were asking every user to set up
-pay-per-use API billing, or Marksheet paying per generated quiz. Copy-paste costs nothing, works
-with every chatbot, and gets file handling for free.
+## Uploading a document
+
+**Upload a file** in the editor takes a PDF, a photo of a page, or plain text, and does one of two
+things with it.
+
+| Mode | For | What happens |
+| --- | --- | --- |
+| Read its questions | A past paper, a practice set, a reviewer | The questions already in it are transcribed, including a key printed pages away from them |
+| Write questions from it | Notes, slides, a chapter | New questions are written about the material, with a count you choose |
+
+A `.txt` or `.md` in **read** mode never leaves the browser, since it already holds the format.
+Everything else goes to `/api/import`, which is the one route that calls a model and therefore the
+one route that requires an account.
+
+The model never writes Marksheet format. It returns objects, `serializeSheet` writes the format,
+and `parseSheet` has to accept the result before it reaches the editor, so a malformed sheet cannot
+come out of this. A *wrong* one can, which is why the result lands in the editor for you to read
+rather than in a finished quiz.
+
+Reading a paper and writing questions about one fail differently. Transcribing risks mis-keying a
+question, so the brief tells the model to drop any question whose answer it cannot find rather than
+guess at it. Composing risks inventing a fact, so it is told to stay inside the document.
+
+Try it without the browser:
+
+```bash
+npm run try:import -- paper.pdf              # transcribe its questions
+npm run try:import -- notes.pdf --write 20   # write 20 questions about it
+```
+
+### Credentials
+
+On Vercel the deployment's OIDC token authenticates AI Gateway, so no key is needed, though the
+account must have a card on file. Locally, or to avoid Gateway entirely, set
+`GOOGLE_GENERATIVE_AI_API_KEY` from Google AI Studio and it is used directly instead.
+`MARKSHEET_IMPORT_MODEL` overrides the model.
+
+> There is no per-account quota yet. Reading a document costs real money, so set a ceiling with
+> `vercel ai-gateway budgets` before running this anywhere public.
 
 ---
 

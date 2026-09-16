@@ -334,9 +334,12 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
 
         {inputMode === "upload" ? (
           <SourceUpload
-            onLoaded={(text, filename) => {
+            onLoaded={(text, filename, suggested) => {
               setSource(text);
               setLoadedFile(filename);
+              // A document usually names itself, but never over a title the
+              // author has already typed.
+              if (suggested) setTitle((current) => current.trim() || suggested);
               setBuildSeed((n) => n + 1);
               setInputMode("paste");
             }}
