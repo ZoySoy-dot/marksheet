@@ -7,6 +7,7 @@ import { signOut, useSession } from "next-auth/react";
 import SignInButton from "@/components/SignInButton";
 import { firstName, initial } from "@/lib/people";
 import { useUsage } from "@/lib/useUsage";
+import { TOKENS_PER_TYPICAL_IMPORT } from "@/lib/usage";
 
 /**
  * The account, behind the avatar.
@@ -53,6 +54,15 @@ export default function UserMenu({ compact = false }: { compact?: boolean }) {
 
   const user = session.user;
   const left = usage?.importsLeft ?? null;
+  const tokens = usage?.credits ?? null;
+
+  /**
+   * A balance too small for one whole read is still not nothing, and "0 credits
+   * left" reads as though the money never arrived. It is also wrong about what
+   * you can do: canImport() asks whether anything is left, not whether there is
+   * enough for this file, so a part balance still buys a read.
+   */
+  const partial = left === 0 && (tokens ?? 0) > 0;
 
   return (
     <div className="account" ref={wrap}>
@@ -101,25 +111,40 @@ export default function UserMenu({ compact = false }: { compact?: boolean }) {
 
         <div className="account-credits">
           <p className="figure">
-            <span className="figure-num">{left ?? "—"}</span>
+            <span className="figure-num">
+              {partial ? tokens!.toLocaleString() : (left ?? "—")}
+            </span>
             <span className="figure-label">
-              {left === 1 ? "credit left" : "credits left"}
+              {partial ? "tokens left" : left === 1 ? "credit left" : "credits left"}
             </span>
           </p>
           <p className="account-note">
-            One credit has AI make a quiz from a document. Writing a sheet yourself, and anyone
-            taking one, is always free.
+            {partial ? (
+              <>
+                Under the {TOKENS_PER_TYPICAL_IMPORT.toLocaleString()} tokens a document usually
+                takes, so this may not stretch to a whole one. It is still spendable, and a read
+                that overshoots is allowed to finish.
+              </>
+            ) : (
+              <>
+                One credit has AI make a quiz from a document. Writing a sheet yourself, and
+                anyone taking one, is always free.
+              </>
+            )}
           </p>
           <Link className="btn btn-primary" href="/topup" role="menuitem">
-            {left === 0 ? "Top up to use AI" : "Top up"}
+            {left === 0 && !partial ? "Top up to use AI" : "Top up"}
           </Link>
         </div>
 
+        {/* Home, not back where they were. Signing out on a page that needs an
+            account bounces straight to the sign-in screen, which reads as the
+            sign-out having failed. */}
         <button
           className="account-out"
           type="button"
           role="menuitem"
-          onClick={() => signOut()}
+          onClick={() => signOut({ callbackUrl: "/" })}
         >
           Sign out
         </button>
