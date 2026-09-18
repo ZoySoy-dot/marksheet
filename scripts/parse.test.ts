@@ -1,5 +1,5 @@
 /**
- * Contract tests for the Marksheet format.
+ * Contract tests for the Sagot format.
  * Run with: npm test
  */
 import assert from "node:assert/strict";

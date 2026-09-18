@@ -1,4 +1,4 @@
-# Marksheet
+# Sagot
 
 Paste your questions as plain text. Get an interactive quiz you can share with a link.
 
@@ -79,7 +79,7 @@ so equations are readable by screen readers.
 with your reviewer (they read PDFs, slides and photos of notes natively) and paste the reply into
 the editor.
 
-This path costs Marksheet nothing and has no quota, because the chatbot you already pay for does
+This path costs Sagot nothing and has no quota, because the chatbot you already pay for does
 the reading. The brief is built in `src/lib/aiPrompt.ts`; the question count is the only knob.
 
 The parser ignores code-fence lines, since chatbots wrap their answer in one however firmly the
@@ -104,7 +104,7 @@ A `.txt` or `.md` in **read** mode never leaves the browser, since it already ho
 Everything else goes to `/api/import`, which is the one route that calls a model and therefore the
 one route that requires an account.
 
-The model never writes Marksheet format. It returns objects, `serializeSheet` writes the format,
+The model never writes Sagot format. It returns objects, `serializeSheet` writes the format,
 and `parseSheet` has to accept the result before it reaches the editor, so a malformed sheet cannot
 come out of this. A *wrong* one can, which is why the result lands in the editor for you to read
 rather than in a finished quiz.
@@ -125,7 +125,7 @@ npm run try:import -- notes.pdf --write 20   # write 20 questions about it
 On Vercel the deployment's OIDC token authenticates AI Gateway, so no key is needed, though the
 account must have a card on file. Locally, or to avoid Gateway entirely, set
 `GOOGLE_GENERATIVE_AI_API_KEY` from Google AI Studio and it is used directly instead.
-`MARKSHEET_IMPORT_MODEL` overrides the model.
+`SAGOT_IMPORT_MODEL` overrides the model.
 
 > There is no per-account quota yet. Reading a document costs real money, so set a ceiling with
 > `vercel ai-gateway budgets` before running this anywhere public.
@@ -193,7 +193,7 @@ ownership is enforced per-route instead.
 browser you sign in from, and you can edit it without holding any key.
 
 **Publishing signed out** still works. The sheet gets a secret **edit token**, kept in
-`localStorage` under `marksheet.mine`, which is then the only proof you wrote it. Clear that
+`localStorage` under `sagot.mine`, which is then the only proof you wrote it. Clear that
 browser's storage and you lose the ability to edit, though the share link keeps working.
 
 **Claiming.** Signed in, `/mine` offers to move any sheets this browser published into your account.
@@ -211,7 +211,7 @@ id) to back the "taken N times" line on a sheet.
 
 Questions are sent to the browser with their correct answers, and grading happens client-side. That
 is deliberate: instant feedback with no round trip. It also means a determined taker can read the
-answers out of the page source. Marksheet is a study tool, not an exam invigilator, so do not use it
+answers out of the page source. Sagot is a study tool, not an exam invigilator, so do not use it
 for anything that gets a grade.
 
 ---

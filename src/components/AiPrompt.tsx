@@ -49,7 +49,7 @@ export default function AiPrompt() {
         <li>
           <p className="step-name">Upload the file it gives you</p>
           <p className="step-note">
-            Download marksheet.md, then drop it into Upload a file. Pasting the text works too.
+            Download sagot.md, then drop it into Upload a file. Pasting the text works too.
           </p>
         </li>
       </ol>

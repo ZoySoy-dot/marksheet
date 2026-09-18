@@ -13,7 +13,7 @@
  * the seventeenth question on page 6 is the whole reason this runs a model
  * over the document rather than a parser.
  *
- * The model never writes Marksheet format. It returns objects, serializeSheet
+ * The model never writes Sagot format. It returns objects, serializeSheet
  * writes the format, and parseSheet still has to accept the result before
  * anything can be published. A malformed sheet is therefore not possible here,
  * only a wrong one, which is what the review step in the editor is for.
@@ -219,7 +219,7 @@ Return at most ${MAX_QUESTIONS} questions.`;
  * Cheap, and long enough in the context to hold an answer key printed forty
  * pages from the questions it answers. The newer flash models read a scanned
  * page better but are not on the gateway's free tier, so the default is the
- * one that works before any credits are bought. MARKSHEET_IMPORT_MODEL moves
+ * one that works before any credits are bought. SAGOT_IMPORT_MODEL moves
  * it up once they are.
  *
  * Two ways to reach it. On Vercel the gateway needs no key at all, since the
@@ -227,7 +227,7 @@ Return at most ${MAX_QUESTIONS} questions.`;
  * have a card on file. A Google AI Studio key has a free tier and no such
  * requirement, so if one is present it is used directly instead.
  */
-export const IMPORT_MODEL = process.env.MARKSHEET_IMPORT_MODEL || "google/gemini-2.5-flash";
+export const IMPORT_MODEL = process.env.SAGOT_IMPORT_MODEL || "google/gemini-2.5-flash";
 
 export function importModel() {
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) return IMPORT_MODEL;

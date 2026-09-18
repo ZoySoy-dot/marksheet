@@ -18,7 +18,14 @@ export type SavedSheet = {
   createdAt: string;
 };
 
-const KEY = "marksheet.mine";
+const KEY = "sagot.mine";
+
+/**
+ * The key this used to be, before the rename to Sagot. An unclaimed quiz
+ * stays editable for six hours, so anyone mid-window at the rename would have
+ * lost the only proof they wrote it. Read once, then move it across.
+ */
+const FORMER_KEY = "marksheet.mine";
 
 /** How long an unclaimed quiz stays editable from this browser. */
 export const LOCAL_TTL_MS = 6 * 60 * 60 * 1000;
@@ -48,6 +55,7 @@ export function timeLeftLabel(sheet: SavedSheet): string {
 function write(list: SavedSheet[]) {
   try {
     localStorage.setItem(KEY, JSON.stringify(list));
+    localStorage.removeItem(FORMER_KEY);
   } catch {
     /* storage is full or blocked, but the quiz is still published */
   }
@@ -57,7 +65,7 @@ function write(list: SavedSheet[]) {
 export function readMine(): SavedSheet[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) ?? localStorage.getItem(FORMER_KEY);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];

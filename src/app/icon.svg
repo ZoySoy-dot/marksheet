@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!--
+    The marked answer bubble, same shape as .brand-bubble and .bubble in
+    globals.css: ring 12.5% of the diameter, gap 18.75%, dot 37.5%. Drawn at a
+    diameter of 30 rather than 32 so the ring is not clipped by the canvas edge.
+  -->
+  <style>
+    .ring { fill: none; stroke: #2563EB; }
+    .dot  { fill: #2563EB; }
+    /* Matches --accent in globals.css, so the tab tracks the page. */
+    @media (prefers-color-scheme: dark) {
+      .ring { stroke: #60A5FA; }
+      .dot  { fill: #60A5FA; }
+    }
+  </style>
+  <circle class="ring" cx="16" cy="16" r="13.125" stroke-width="3.75" />
+  <circle class="dot" cx="16" cy="16" r="5.625" />
+</svg>

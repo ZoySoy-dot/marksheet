@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import SignInButton from "@/components/SignInButton";
 import QuestionBuilder from "@/components/QuestionBuilder";
 import MathKeyboard from "@/components/MathKeyboard";
 import MathKeyboardToggle from "@/components/MathKeyboardToggle";
@@ -14,7 +15,7 @@ import { findTexProblems } from "@/lib/tex";
 import { SAMPLE_SOURCE, SAMPLE_TITLE } from "@/lib/sample";
 import { forgetSheet, rememberSheet } from "@/lib/mine";
 
-const DRAFT_KEY = "marksheet.draft";
+const DRAFT_KEY = "sagot.draft";
 const PROBLEMS_SHOWN = 8;
 
 type Props = {
@@ -25,7 +26,7 @@ type Props = {
   initialSource?: string;
 };
 
-type Published = { slug: string; url: string; owned: boolean };
+type Published = { slug: string; url: string };
 
 type InputMode = "build" | "paste" | "upload";
 
@@ -42,6 +43,8 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
   const [practising, setPractising] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** A session that lapsed while the sheet was being written. */
+  const [lapsed, setLapsed] = useState(false);
   const [saved, setSaved] = useState(false);
   const [published, setPublished] = useState<Published | null>(null);
   const [inputMode, setInputMode] = useState<InputMode>("build");
@@ -117,6 +120,7 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
   const publish = async () => {
     setBusy(true);
     setError(null);
+    setLapsed(false);
     try {
       const response = await fetch("/api/quizzes", {
         method: "POST",
@@ -124,7 +128,10 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
         body: JSON.stringify({ title: effectiveTitle, source }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not publish this sheet.");
+      if (!response.ok) {
+        if (response.status === 401) setLapsed(true);
+        throw new Error(data.error ?? "Could not publish this sheet.");
+      }
 
       rememberSheet({
         slug: data.slug,
@@ -133,11 +140,7 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
         questionCount: data.questionCount,
         createdAt: new Date().toISOString(),
       });
-      setPublished({
-        slug: data.slug,
-        url: `${window.location.origin}/q/${data.slug}`,
-        owned: Boolean(data.owned),
-      });
+      setPublished({ slug: data.slug, url: `${window.location.origin}/q/${data.slug}` });
       try {
         localStorage.removeItem(DRAFT_KEY);
       } catch {
@@ -418,6 +421,7 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
         {error ? (
           <div className="banner" role="alert">
             <p>{error}</p>
+            {lapsed ? <SignInButton callbackUrl="/new" /> : null}
           </div>
         ) : null}
 
@@ -447,11 +451,7 @@ export default function Composer({ mode, slug, editToken, initialTitle, initialS
                 Open
               </a>
             </div>
-            <p className="share-note">
-              {published.owned
-                ? "Saved to your account. Edit it any time from Quizzes."
-                : "The link works forever, but only this browser can edit it, and only for a few hours. Sign in and it moves to your account automatically."}
-            </p>
+            <p className="share-note">Saved to your account. Edit it any time from Quizzes.</p>
           </div>
         ) : null}
       </div>

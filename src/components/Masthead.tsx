@@ -5,10 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const NAV = [
-  { href: "/quizzes", label: "Quizzes" },
-  { href: "/ai", label: "Use AI" },
-];
+const NAV = [{ href: "/quizzes", label: "Quizzes" }];
 
 export default function Masthead() {
   const [open, setOpen] = useState(false);
@@ -35,7 +32,7 @@ export default function Masthead() {
       <div className="masthead-in">
         <Link className="brand" href="/">
           <span className="brand-bubble" aria-hidden="true" />
-          <span className="brand-name">Marksheet</span>
+          <span className="brand-name">Sagot</span>
         </Link>
 
         {/* Wide screens: everything on one line. */}

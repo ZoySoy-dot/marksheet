@@ -44,7 +44,7 @@ const MODES: { id: Mode; label: string }[] = [
   { id: "test", label: "Test" },
 ];
 
-const SETTINGS_KEY = "marksheet.settings";
+const SETTINGS_KEY = "sagot.settings";
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 function shuffle<T>(list: readonly T[]): T[] {
@@ -531,7 +531,7 @@ export default function QuizRunner({
                   <input
                     className="sr-only"
                     type="radio"
-                    name="marksheet-mode"
+                    name="sagot-mode"
                     checked={settings.mode === option.id}
                     onChange={() => updateSettings({ mode: option.id })}
                   />

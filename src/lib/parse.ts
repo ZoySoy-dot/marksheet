@@ -1,5 +1,5 @@
 /**
- * The Marksheet format.
+ * The Sagot format.
  *
  *   Q: What is the capital of France?
  *   - London

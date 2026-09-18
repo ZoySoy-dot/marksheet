@@ -1,12 +1,12 @@
 /* ============================================================
-   Marksheet
+   Sagot
    One sans for the whole interface, mono only where the user is
    looking at literal text. Quiet surfaces, one accent, generous
    space. Nothing decorative earns its place.
    ============================================================ */
 
 :root {
-  --bg:            #FAFAFA;
+  --bg:            #FFFFFF;
   --surface:       #FFFFFF;
   --surface-2:     #F4F4F5;
   --border:        #E4E4E7;
@@ -15,14 +15,26 @@
   --muted:         #52525B;
   --faint:         #6B6B75;
   --accent:        #2563EB;
+
+  /* The marked answer bubble, as fractions of its own diameter. The masthead
+     lockup, the favicon (src/app/icon.svg) and every answer option draw the
+     same mark from these, so it stays one shape at every size it appears. */
+  --bubble-ring:   .125;
+  --bubble-dot:    .375;
   --accent-soft:   rgba(37, 99, 235, .09);
+  --accent-wash:   #F5F8FF;
+  --accent-line:   #DCE6FB;
   --good:          #15803D;
   --good-soft:     rgba(21, 128, 61, .09);
   --bad:           #D82525;
   --bad-soft:      rgba(220, 38, 38, .08);
 
   --ff-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ff-serif: var(--font-serif), Iowan Old Style, Palatino, Georgia, serif;
   --ff-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* A highlighter, used where a student would use one and nowhere else. */
+  --hl:            #FDE68A;
 
   --r:    10px;
   --r-sm: 7px;
@@ -32,28 +44,6 @@
   --ease: cubic-bezier(.2, .7, .3, 1);
 
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg:            #0C0C0E;
-    --surface:       #161619;
-    --surface-2:     #1D1D21;
-    --border:        #27272A;
-    --border-strong: #3F3F46;
-    --text:          #FAFAFA;
-    --muted:         #A1A1AA;
-    --faint:         #8E8E99;
-    --accent:        #60A5FA;
-    --accent-soft:   rgba(96, 165, 250, .12);
-    --good:          #4ADE80;
-    --good-soft:     rgba(74, 222, 128, .12);
-    --bad:           #F87171;
-    --bad-soft:      rgba(248, 113, 113, .12);
-    --shadow: 0 1px 2px rgba(0, 0, 0, .4);
-    --shadow-lg: 0 4px 24px -8px rgba(0, 0, 0, .7);
-    color-scheme: dark;
-  }
 }
 
 :root[data-theme="dark"] {
@@ -67,6 +57,9 @@
   --faint:         #8E8E99;
   --accent:        #60A5FA;
   --accent-soft:   rgba(96, 165, 250, .12);
+  --accent-wash:   #14161C;
+  --accent-line:   #23304A;
+  --hl:            #5B4A12;
   --good:          #4ADE80;
   --good-soft:     rgba(74, 222, 128, .12);
   --bad:           #F87171;
@@ -150,11 +143,18 @@ kbd {
 
 h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 1.15; }
 
+.display,
+.hero h1,
+.band h2,
+.closer h2 {
+  font-family: var(--ff-serif);
+  font-weight: 600;
+  letter-spacing: -.012em;
+}
+
 .display {
   font-size: clamp(2rem, 5vw, 2.75rem);
-  font-weight: 680;
-  letter-spacing: -.032em;
-  line-height: 1.08;
+  line-height: 1.1;
 }
 
 .display.display-sm { font-size: clamp(1.5rem, 3.5vw, 1.9rem); }
@@ -171,7 +171,7 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 }
 
 .deck {
-  margin: .85rem 0 0;
+  margin: .9rem 0 0;
   font-size: 1.05rem;
   line-height: 1.6;
   color: var(--muted);
@@ -216,18 +216,28 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
   color: inherit;
 }
 
+/* Sized against the cap height of .brand-name rather than its em box. A 16px
+   circle out-measured the letterforms by half, which "Marksheet" was wide
+   enough to absorb and "Sagot" is not. */
 .brand-bubble {
-  width: 16px;
-  height: 16px;
+  --bubble-size: 14px;
+  width: var(--bubble-size);
+  height: var(--bubble-size);
   flex: none;
   border-radius: 50%;
-  border: 2px solid var(--accent);
+  border: calc(var(--bubble-size) * var(--bubble-ring)) solid var(--accent);
   position: relative;
 }
+/* Centred and sized rather than inset, because a browser floors the border to
+   whole device pixels and an inset dot silently absorbs that rounding error. */
 .brand-bubble::after {
   content: "";
   position: absolute;
-  inset: 3px;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--bubble-size) * var(--bubble-dot));
+  height: calc(var(--bubble-size) * var(--bubble-dot));
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--accent);
 }
@@ -417,10 +427,9 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 }
 
 .hero h1 {
-  font-size: clamp(2.4rem, 6.5vw, 3.9rem);
-  font-weight: 690;
-  letter-spacing: -.042em;
-  line-height: 1.03;
+  font-size: clamp(2.5rem, 6.6vw, 4rem);
+  line-height: 1.06;
+  max-width: 14ch;
 }
 
 .hero-lead {
@@ -435,7 +444,7 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 
 .hero-aside {
   display: grid;
-  gap: .55rem;
+  gap: .75rem;
   justify-items: stretch;
 }
 
@@ -447,37 +456,141 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
   line-height: 1;
 }
 
+/* Label and the thing it names travel together, so the arrow between the two
+   steps gets the room and the label does not drift off its own card. */
+.flow-step { display: grid; gap: .4rem; }
+
+.mini-label {
+  margin: 0;
+  font-size: .8rem;
+  font-weight: 540;
+  color: var(--faint);
+}
+
+.notes-card {
+  margin: 0;
+  padding: 1.05rem 1.15rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: .95rem;
+  line-height: 1.7;
+  color: var(--muted);
+  box-shadow: var(--shadow);
+}
+
+/* The one moment of motion on the page: the highlighter goes over the fact
+   that becomes the answer, once, on load. */
+.hl {
+  color: var(--text);
+  font-weight: 520;
+  padding: .08em .18em;
+  border-radius: 3px;
+  background-image: linear-gradient(var(--hl), var(--hl));
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 0 100%;
+  animation: mark-it .5s var(--ease) .65s forwards;
+}
+
+@keyframes mark-it { to { background-size: 100% 100%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hl { animation: none; background-size: 100% 100%; }
+}
+
+
 .band {
-  padding: clamp(2.5rem, 6vw, 4rem) 0;
+  padding: clamp(3rem, 7vw, 4.75rem) 0;
   border-top: 1px solid var(--border);
 }
 
-.band h2 { font-size: clamp(1.4rem, 3vw, 1.75rem); }
+.band h2 { font-size: clamp(1.55rem, 3.2vw, 2.05rem); }
 
-.tiles {
-  list-style: none;
-  margin: 2rem 0 0;
-  padding: 0;
-  display: grid;
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
+
+/* The one filled area on the page. Named for the landing page rather than
+   called .panel, which is already the quiz pages' bordered box. */
+.wash {
+  margin-top: 2rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  background: var(--accent-wash);
+  border: 1px solid var(--accent-line);
+  border-radius: 16px;
 }
 
-@media (min-width: 40rem) { .tiles { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 58rem) { .tiles { grid-template-columns: repeat(3, 1fr); } }
+.wash .steps { margin-top: 0; }
 
-.tiles li { background: var(--surface); padding: 1.35rem 1.4rem; }
+/* Set as type rather than as cards, so the page does not read as three
+   identical grids stacked on each other. */
+.gains {
+  margin-top: 2.25rem;
+  display: grid;
+  gap: 1.75rem;
+}
 
-.tile-name { margin: 0; font-size: 1rem; font-weight: 580; letter-spacing: -.015em; }
+@media (min-width: 46rem) { .gains { grid-template-columns: repeat(3, 1fr); gap: 2.25rem; } }
 
-.tile-note {
-  margin: .35rem 0 0;
+.gain-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 580;
+  letter-spacing: -.018em;
+}
+
+.gain-note {
+  margin: .4rem 0 0;
+  font-size: .95rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* Secondary routes and the honest limits, kept legible but subordinate. */
+.fine {
+  border-top: 1px solid var(--border);
+  margin-top: clamp(2.5rem, 6vw, 4rem);
+  padding: clamp(2rem, 5vw, 3rem) 0 clamp(2.5rem, 6vw, 4rem);
+  display: grid;
+  gap: 2rem;
+}
+
+@media (min-width: 52rem) { .fine { grid-template-columns: repeat(2, 1fr); gap: 3rem; } }
+
+.fine-note {
+  margin: .7rem 0 0;
+  font-size: .93rem;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 48ch;
+}
+
+.fine .guide-code { margin-top: .9rem; box-shadow: none; }
+
+.limits {
+  list-style: none;
+  margin: .8rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: .5rem;
+  max-width: 62ch;
+}
+
+.limits li {
+  position: relative;
+  padding-left: 1.1rem;
   font-size: .93rem;
   line-height: 1.5;
   color: var(--muted);
+}
+
+.limits li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-line);
 }
 
 .steps {
@@ -542,9 +655,9 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 .guide-preview {
   border: 1px solid var(--border);
   border-radius: var(--r);
-  padding: 1.1rem;
+  padding: 1.15rem;
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-lg);
 }
 
 .guide-q { margin: 0 0 .85rem; font-size: 1rem; font-weight: 550; letter-spacing: -.015em; }
@@ -555,7 +668,7 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 .opt-static:hover { border-color: var(--border); }
 .opt-static.is-marked { border-color: var(--accent); background: var(--accent-soft); }
 .opt-static.is-marked .bubble { border-color: var(--accent); }
-.opt-static.is-marked .bubble-fill { transform: scale(1); }
+.opt-static.is-marked .bubble-fill { transform: translate(-50%, -50%) scale(1); }
 
 /* ---------- editor ---------- */
 
@@ -789,7 +902,7 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
 .qbuild-mark { display: grid; place-items: center; cursor: pointer; position: relative; }
 .qbuild-mark input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .qbuild-opt.is-correct .bubble { border-color: var(--good); }
-.qbuild-opt.is-correct .bubble-fill { transform: scale(1); background: var(--good); }
+.qbuild-opt.is-correct .bubble-fill { transform: translate(-50%, -50%) scale(1); background: var(--good); }
 .qbuild-opt.is-multi .bubble { border-radius: 5px; }
 .qbuild-mark input:focus-visible ~ .bubble { outline: 2px solid var(--accent); outline-offset: 3px; }
 
@@ -1149,10 +1262,11 @@ body > .ML__keyboard { z-index: 40; }
 .opt input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 
 .bubble {
-  width: 18px;
-  height: 18px;
+  --bubble-size: 18px;
+  width: var(--bubble-size);
+  height: var(--bubble-size);
   flex: none;
-  border: 1.5px solid var(--border-strong);
+  border: calc(var(--bubble-size) * var(--bubble-ring)) solid var(--border-strong);
   border-radius: 50%;
   position: relative;
   transition: border-color .15s var(--ease);
@@ -1162,15 +1276,18 @@ body > .ML__keyboard { z-index: 40; }
 
 .bubble-fill {
   position: absolute;
-  inset: 3px;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--bubble-size) * var(--bubble-dot));
+  height: calc(var(--bubble-size) * var(--bubble-dot));
   border-radius: inherit;
   background: var(--accent);
-  transform: scale(0);
+  transform: translate(-50%, -50%) scale(0);
   transition: transform .14s var(--ease);
 }
 
 .opt input:checked ~ .bubble { border-color: var(--accent); }
-.opt input:checked ~ .bubble .bubble-fill { transform: scale(1); }
+.opt input:checked ~ .bubble .bubble-fill { transform: translate(-50%, -50%) scale(1); }
 .opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
 .opt input:focus-visible ~ .bubble { outline: 2px solid var(--accent); outline-offset: 3px; }
 
@@ -1924,3 +2041,174 @@ body > .ML__keyboard { z-index: 40; }
     transition-duration: .001ms !important;
   }
 }
+
+/* What the meter has left, said quietly next to the upload pane. */
+.meter-note {
+  margin: .75rem 0 0;
+  font-size: .85rem;
+  color: var(--faint);
+}
+
+/* ---------- top up ---------- */
+
+.balance {
+  margin-top: 1.75rem;
+  padding: 1.25rem 1.35rem;
+  background: var(--accent-wash);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r);
+}
+
+.balance-note {
+  margin: .35rem 0 0;
+  font-size: .9rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.packs {
+  list-style: none;
+  margin: .8rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: .6rem;
+}
+
+.packs li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+
+.pack-price { margin: 0; font-size: 1.15rem; font-weight: 600; letter-spacing: -.02em; }
+
+.pack-reads { margin: .15rem 0 0; font-size: .9rem; color: var(--muted); }
+
+/* Reads left, in the masthead. Quiet until there are none. */
+.credits {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .3rem;
+  padding: .28rem .6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: .82rem;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.credits:hover { border-color: var(--border-strong); color: var(--text); }
+
+.credits-num { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+
+.credits.is-out {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 550;
+}
+
+/* ---------- account menu ---------- */
+
+.account { position: relative; }
+
+.account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .25rem .5rem .25rem .25rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--muted);
+  transition: border-color .15s var(--ease), background .15s var(--ease);
+}
+
+/* The avatar alone reads as decoration, so the trigger carries a border on
+   hover and a caret always. */
+.account-trigger:hover,
+.account-trigger[aria-expanded="true"] {
+  border-color: var(--border);
+  background: var(--surface-2);
+}
+
+.account-caret { flex: none; transition: transform .15s var(--ease); }
+.account-trigger[aria-expanded="true"] .account-caret { transform: rotate(180deg); }
+
+.account-panel {
+  position: absolute;
+  top: calc(100% + .5rem);
+  right: 0;
+  z-index: 40;
+  width: min(19rem, calc(100vw - 2rem));
+  padding: 1rem;
+  display: grid;
+  gap: .9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-lg);
+}
+
+.account-panel[hidden] { display: none; }
+
+.account-who { display: flex; align-items: center; gap: .7rem; }
+.account-who .user-avatar { width: 40px; height: 40px; }
+.account-id { min-width: 0; }
+
+.account-name {
+  margin: 0;
+  font-size: .95rem;
+  font-weight: 570;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-email {
+  margin: .1rem 0 0;
+  font-size: .82rem;
+  color: var(--faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-credits {
+  padding: .9rem 1rem;
+  background: var(--accent-wash);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-sm);
+}
+
+.account-credits .figure { margin: 0; }
+.account-credits .btn { margin-top: .8rem; width: 100%; justify-content: center; }
+
+.account-note {
+  margin: .4rem 0 0;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.account-out {
+  font-family: inherit;
+  font-size: .875rem;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: .5rem .8rem;
+  cursor: pointer;
+  transition: border-color .15s var(--ease), color .15s var(--ease);
+}
+.account-out:hover { color: var(--text); border-color: var(--border-strong); }

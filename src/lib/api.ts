@@ -5,7 +5,7 @@ import { DatabaseNotConfiguredError } from "@/lib/db";
 export function apiError(error: unknown) {
   if (error instanceof DatabaseNotConfiguredError) {
     return NextResponse.json(
-      { error: "This Marksheet is not connected to a database yet." },
+      { error: "This copy of Sagot is not connected to a database yet." },
       { status: 503 },
     );
   }

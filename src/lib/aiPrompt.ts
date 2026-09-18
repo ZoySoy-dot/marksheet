@@ -1,9 +1,9 @@
 /**
- * The brief handed to a chatbot so it writes a sheet Marksheet can read.
+ * The brief handed to a chatbot so it writes a sheet Sagot can read.
  *
  * Written to be pasted into Claude, Gemini or ChatGPT alongside the person's
  * own material, since those tools already read PDFs, slides and photos, so there is
- * nothing for Marksheet to parse.
+ * nothing for Sagot to parse.
  */
 
 export type PromptOptions = {
@@ -17,9 +17,9 @@ export function buildPrompt({ count }: PromptOptions): string {
       ? `Write ${count} questions.`
       : "Write as many questions as the material genuinely supports, and stop there.";
 
-  return `You are turning my study material into a quiz for Marksheet.
+  return `You are turning my study material into a quiz for Sagot.
 
-Give it to me as a downloadable Markdown file called marksheet.md.
+Give it to me as a downloadable Markdown file called sagot.md.
 
 That file must contain the quiz and nothing else: no title, no heading, no introduction, no closing remarks, no code fences. Just the lines described below, starting with the first "Q:".
 

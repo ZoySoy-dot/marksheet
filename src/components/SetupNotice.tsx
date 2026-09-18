@@ -4,7 +4,7 @@ export default function SetupNotice() {
       <p className="rubric">Not connected</p>
       <h1 className="display display-md">No database yet</h1>
       <p className="deck">
-        This Marksheet has no Neon connection string, so it cannot store or load sheets.
+        This copy of Sagot has no Neon connection string, so it cannot store or load sheets.
       </p>
       <div className="banner banner-info">
         <p>
