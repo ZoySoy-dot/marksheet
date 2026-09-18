@@ -1,4 +1,4 @@
--- Marksheet schema (Neon Postgres). Safe to re-run.
+-- Sagot schema (Neon Postgres). Safe to re-run.
 
 create table if not exists quizzes (
   id             bigserial primary key,
@@ -119,3 +119,67 @@ alter table runs     add column if not exists written jsonb not null default '{}
 -- work, and we only ever hold the browsing user's session.
 alter table quizzes add column if not exists owner_name text;
 alter table quizzes add column if not exists owner_image text;
+
+-- ---------------------------------------------------------------------------
+-- Usage metering
+--
+-- Reading a document is the only thing here that costs real money, and until
+-- now it left no trace at all: no way to see who spent what, no way to cap
+-- anyone, and nothing to bill from. One row per attempt, written whether or not
+-- the read succeeded, because a failed read still burns tokens.
+-- ---------------------------------------------------------------------------
+create table if not exists imports (
+  id             bigserial primary key,
+  user_id        text not null,
+  mode           text not null,
+  filename       text,
+  media_type     text,
+  file_bytes     integer not null default 0,
+  model          text not null,
+  input_tokens   integer not null default 0,
+  cached_tokens  integer not null default 0,
+  output_tokens  integer not null default 0,
+  total_tokens   integer not null default 0,
+  -- Money as an integer. Millionths of a USD, so summing a year of rows never
+  -- drifts the way repeated float addition does.
+  cost_micro_usd bigint not null default 0,
+  question_count integer not null default 0,
+  ok             boolean not null default true,
+  created_at     timestamptz not null default now()
+);
+
+-- The quota question is always "this person, since this date", so the index
+-- matches it exactly.
+create index if not exists imports_user_idx on imports (user_id, created_at desc);
+
+-- Bought reads.
+--
+-- There is no subscription and no plan: a person tops up a balance and it sits
+-- here until it is used. Nothing renews, nothing lapses, and nothing has to be
+-- cancelled, which is the point. The free monthly allowance is not stored, it
+-- is computed from the imports ledger.
+create table if not exists user_credits (
+  user_id          text primary key,
+  tokens_remaining bigint not null default 0,
+  updated_at       timestamptz not null default now()
+);
+
+-- Every grant, so a balance can always be explained.
+--
+-- `reference` is the idempotency key and is required. For a PayMongo purchase
+-- it is the checkout session id; for a manual grant it is whatever the person
+-- granting invents. PayMongo retries a failed webhook up to twelve times, so
+-- duplicates are normal rather than exceptional, and the unique constraint is
+-- what stops the twelfth delivery granting a twelfth pack.
+create table if not exists credit_grants (
+  id         bigserial primary key,
+  user_id    text not null,
+  tokens     bigint not null,
+  amount_php integer not null default 0,
+  pack       text,
+  reference  text not null unique,
+  note       text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists credit_grants_user_idx on credit_grants (user_id, created_at desc);

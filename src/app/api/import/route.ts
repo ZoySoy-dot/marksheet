@@ -5,6 +5,7 @@ import { apiError } from "@/lib/api";
 import { isMode } from "@/lib/importModes";
 import {
   IMPORT_BRIEF,
+  IMPORT_MODEL,
   ImportedSheet,
   importModel,
   toSerializable,
@@ -12,6 +13,8 @@ import {
 } from "@/lib/importing";
 import { parseSheet, suggestTitle } from "@/lib/parse";
 import { serializeSheet } from "@/lib/serialize";
+import { balanceFor, recordImport } from "@/lib/meter";
+import type { TokenCounts } from "@/lib/usage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,9 +23,9 @@ export const maxDuration = 300;
 
 /**
  * Reading a document costs real money, unlike every other route here, so it is
- * the one thing that asks who you are first. That is also the only abuse
- * control there is until quotas exist: an account is cheap to make but not
- * free, and it puts a name against the spend.
+ * the one thing that asks who you are first, and the one thing that is metered.
+ * Every attempt lands in the imports ledger, so the spend has a name and a
+ * number against it.
  */
 const needsAccount = () =>
   NextResponse.json({ error: "Sign in to read a document." }, { status: 401 });
@@ -99,9 +102,41 @@ export async function POST(request: Request) {
           },
         ];
 
+    // Nothing starts until there is allowance left. The check is deliberately
+    // before the file is sent anywhere: the cheapest read is the one that never
+    // reaches the model.
+    const balance = await balanceFor(userId);
+    if (balance.exhausted) {
+      return NextResponse.json(
+        {
+          error: "You are out of credits. Top up to have AI read another document.",
+          balance: { credits: 0, importsLeft: 0 },
+        },
+        { status: 402 },
+      );
+    }
+
+    /** Filled in by the call below, and written to the ledger either way. */
+    const spent: TokenCounts = { inputTokens: 0, cachedTokens: 0, outputTokens: 0 };
+    const ledger = (ok: boolean, questionCount: number) =>
+      recordImport({
+        userId,
+        mode,
+        filename: file.name,
+        mediaType,
+        fileBytes: file.size,
+        model: IMPORT_MODEL,
+        tokens: spent,
+        questionCount,
+        ok,
+      }).catch((error) => {
+        // A lost ledger row must never cost someone the sheet they waited for.
+        console.error("could not record import usage", error);
+      });
+
     let sheet: ImportedSheet;
     try {
-      const { output } = await generateText({
+      const { output, usage } = await generateText({
         model: importModel(),
         system: mode === "write" ? writeBrief(count) : IMPORT_BRIEF,
         output: Output.object({ schema: ImportedSheet }),
@@ -121,12 +156,16 @@ export async function POST(request: Request) {
           },
         ],
       });
+      spent.inputTokens = usage.inputTokens ?? 0;
+      spent.cachedTokens = usage.inputTokenDetails?.cacheReadTokens ?? 0;
+      spent.outputTokens = usage.outputTokens ?? 0;
       sheet = output;
     } catch (error) {
       // The commonest failures by far are a missing gateway credential and an
       // account with no card on file. Both are setup problems, and neither is
       // something the person uploading a paper can do anything about, so they
       // get told it is not their fault rather than shown a stack trace.
+      await ledger(false, 0);
       const detail = error instanceof Error ? error.message : String(error);
       if (
         /api key|unauthor|forbidden|credential|oidc|credit card|verification|quota|billing/i.test(
@@ -135,7 +174,7 @@ export async function POST(request: Request) {
       ) {
         console.error(error);
         return NextResponse.json(
-          { error: "This Marksheet is not set up to read documents yet." },
+          { error: "This copy of Sagot is not set up to read documents yet." },
           { status: 503 },
         );
       }
@@ -144,6 +183,7 @@ export async function POST(request: Request) {
 
     const questions = toSerializable(sheet);
     if (questions.length === 0) {
+      await ledger(false, 0);
       return bad(
         mode === "write"
           ? "No questions could be written from that. It may be too short, or mostly pictures."
@@ -157,6 +197,7 @@ export async function POST(request: Request) {
     // accept. Anything else is a bug here, not something to hand to a person.
     const parsed = parseSheet(source);
     if (parsed.problems.length > 0) {
+      await ledger(false, 0);
       console.error("import produced an unparseable sheet", parsed.problems.slice(0, 5));
       return NextResponse.json(
         { error: "That document was read, but the result came out malformed." },
@@ -164,7 +205,12 @@ export async function POST(request: Request) {
       );
     }
 
+    await ledger(true, parsed.questions.length);
+
+    const after = await balanceFor(userId);
+
     return NextResponse.json({
+      balance: { credits: after.credits, importsLeft: after.importsLeft },
       title:
         sheet.title.trim() ||
         suggestTitle(parsed.questions) ||

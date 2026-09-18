@@ -30,9 +30,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const quiz = await getQuizBySlug(slug);
     if (!quiz) return { title: "Sheet not found" };
+
+    // This is the link that gets pasted into a group chat, so the card it
+    // renders there is the product's front door far more often than the
+    // landing page is. Without openGraph the scraper finds no image and shows
+    // a bare line of text, which reads like a broken link.
+    const description = `${quiz.questionCount} question${
+      quiz.questionCount === 1 ? "" : "s"
+    }. Tap to take it. No account needed.`;
+
     return {
       title: quiz.title,
-      description: `${quiz.questionCount} question${quiz.questionCount === 1 ? "" : "s"}. Take it on Marksheet.`,
+      description,
+      openGraph: {
+        title: quiz.title,
+        description,
+        type: "website",
+        url: `/q/${slug}`,
+      },
+      twitter: { card: "summary_large_image", title: quiz.title, description },
     };
   } catch {
     return { title: "Sheet" };

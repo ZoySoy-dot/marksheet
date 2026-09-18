@@ -43,10 +43,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Signing in is optional. Without an account the sheet is still published,
-    // and the edit token is the only way back into it.
+    // Publishing needs an account. Every sheet therefore has a real owner from
+    // the moment it exists, rather than living on an edit token in one browser.
+    // Sheets published before this rule still have no owner, and the claim
+    // route still exists to adopt them.
     const me = await currentUser();
-    const userId = me?.id ?? null;
+    if (!me) {
+      return NextResponse.json({ error: "Sign in to publish a quiz." }, { status: 401 });
+    }
+    const userId = me.id;
 
     const title = (rawTitle || suggestTitle(questions)).slice(0, MAX_TITLE);
     const sql = getSql();
@@ -61,8 +66,8 @@ export async function POST(request: Request) {
             ${slug},
             ${editToken},
             ${userId},
-            ${me?.name ?? null},
-            ${me?.image ?? null},
+            ${me.name},
+            ${me.image},
             ${title},
             ${source},
             ${JSON.stringify(questions)}::jsonb,
@@ -70,7 +75,7 @@ export async function POST(request: Request) {
           )
         `;
         return NextResponse.json(
-          { slug, editToken, title, questionCount: questions.length, owned: Boolean(userId) },
+          { slug, editToken, title, questionCount: questions.length, owned: true },
           { status: 201 },
         );
       } catch (error) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SignInButton from "@/components/SignInButton";
 import { COUNTS, type ImportMode } from "@/lib/importModes";
 
@@ -51,8 +51,35 @@ export default function SourceUpload({ onLoaded }: Props) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsAccount, setNeedsAccount] = useState(false);
+  /** Reads left this period. Null until the meter has answered, or signed out. */
+  const [left, setLeft] = useState<number | null>(null);
+  const [spent, setSpent] = useState(false);
   const [reading, setReading] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
+
+  // The allowance is worth knowing before a 20 MB upload, not after it.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch("/api/usage");
+        if (!response.ok) return;
+        const data = (await response.json()) as {
+          signedIn?: boolean;
+          importsLeft?: number;
+          exhausted?: boolean;
+        };
+        if (cancelled || !data.signedIn) return;
+        setLeft(data.importsLeft ?? 0);
+        setSpent(Boolean(data.exhausted));
+      } catch {
+        /* the meter is a courtesy: the route enforces the real limit */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const readLocally = async (file: File) => {
     if (file.size > MAX_TEXT_BYTES) {
@@ -104,11 +131,22 @@ export default function SourceUpload({ onLoaded }: Props) {
         source?: string;
         title?: string;
         error?: string;
+        balance?: { importsLeft?: number };
       };
 
       if (response.status === 401) {
         setNeedsAccount(true);
         return;
+      }
+      if (response.status === 402) {
+        setSpent(true);
+        setLeft(0);
+        setError(payload.error ?? "You are out of credits.");
+        return;
+      }
+      if (payload.balance?.importsLeft !== undefined) {
+        setLeft(payload.balance.importsLeft);
+        setSpent(payload.balance.importsLeft <= 0);
       }
       if (!response.ok || !payload.source) {
         setError(payload.error ?? "That document could not be read.");
@@ -210,9 +248,28 @@ export default function SourceUpload({ onLoaded }: Props) {
         </div>
       ) : null}
 
+      {spent ? (
+        <div className="banner banner-info">
+          <p>
+            You are out of credits. Top up to have AI read another document.
+          </p>
+          <p>
+            Typing a sheet out, or pasting one in, stays unlimited and always will be. So does
+            anyone taking a sheet you share.
+          </p>
+          <Link className="btn btn-primary" href="/topup">
+            Top up
+          </Link>
+        </div>
+      ) : left !== null ? (
+        <p className="meter-note">
+          About {left} credit{left === 1 ? "" : "s"} left. Reading this document uses one.
+        </p>
+      ) : null}
+
       {needsAccount ? (
         <div className="banner banner-info" role="alert">
-          <p>Reading a document needs an account.</p>
+          <p>Making a quiz with AI needs an account.</p>
           <SignInButton />
         </div>
       ) : null}
