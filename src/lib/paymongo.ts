@@ -102,6 +102,12 @@ export async function openCheckout(options: {
         ],
         payment_method_types: options.methods ?? methods(),
         description: `Sagot ${pack.label} pack`,
+        // What the payer sees in their GCash or Maya history. Without this it
+        // defaults to the registered business name, which is a person's name
+        // and an IT-services company nobody topping up has heard of. Only the
+        // first eleven characters are shown, and an unrecognisable charge is
+        // how disputes start.
+        statement_descriptor: "Sagot",
         reference_number: reference,
         // Echoed back on the webhook. This is the only link between a payment
         // and the account that should receive it.
