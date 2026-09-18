@@ -19,7 +19,8 @@ const inter = Inter({
  */
 const serif = Source_Serif_4({
   subsets: ["latin"],
-  weight: ["600"],
+  // 700 is the masthead wordmark; 600 is every page title.
+  weight: ["600", "700"],
   variable: "--font-serif",
   display: "swap",
 });

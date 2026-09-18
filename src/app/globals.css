@@ -220,7 +220,7 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
    circle out-measured the letterforms by half, which "Marksheet" was wide
    enough to absorb and "Sagot" is not. */
 .brand-bubble {
-  --bubble-size: 14px;
+  --bubble-size: 16px;
   width: var(--bubble-size);
   height: var(--bubble-size);
   flex: none;
@@ -242,7 +242,15 @@ h1, h2, h3 { margin: 0; font-weight: 640; letter-spacing: -.025em; line-height: 
   background: var(--accent);
 }
 
-.brand-name { font-weight: 620; font-size: 1rem; letter-spacing: -.02em; }
+/* The face the page titles use, so the masthead speaks in the same voice as
+   the headlines rather than in the UI's. Tracking is looser than the sans took:
+   a serif at this size closes up if it is pulled as tight. */
+.brand-name {
+  font-family: var(--ff-serif);
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: -.01em;
+}
 
 .masthead-right { display: flex; align-items: center; gap: 1.25rem; }
 .masthead-nav { display: flex; gap: 1.1rem; }
