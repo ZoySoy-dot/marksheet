@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
 import { grantCredits } from "@/lib/meter";
-import { isConfigured, readPaidCheckout, verifyWebhook } from "@/lib/paymongo";
+import { isConfigured, readPaidCheckout, signatureAgeSeconds, verifyWebhook } from "@/lib/paymongo";
 import { packFor } from "@/lib/usage";
 
 export const runtime = "nodejs";
@@ -40,6 +40,15 @@ export async function POST(request: Request) {
 
     if (!verifyWebhook(request.headers.get("paymongo-signature"), raw)) {
       return NextResponse.json({ error: "Bad signature." }, { status: 401 });
+    }
+
+    // A late delivery is almost certainly a retry of one that failed. Recorded
+    // rather than refused, because it is also the only way to find out whether
+    // PayMongo re-signs a retry or replays the original timestamp — which their
+    // documentation does not say.
+    const age = signatureAgeSeconds(request.headers.get("paymongo-signature"));
+    if (age !== null && age > 300) {
+      console.warn("late webhook delivery, probably a retry", { ageSeconds: age });
     }
 
     let payload: unknown;

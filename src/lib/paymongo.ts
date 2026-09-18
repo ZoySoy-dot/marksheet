@@ -82,6 +82,8 @@ export async function openCheckout(options: {
   email?: string | null;
   successUrl: string;
   cancelUrl: string;
+  /** Overrides the account-wide list. Used by the one peso test checkout. */
+  methods?: string[];
 }): Promise<CheckoutSession> {
   const { pack, userId, reference, successUrl, cancelUrl } = options;
 
@@ -98,7 +100,7 @@ export async function openCheckout(options: {
             quantity: 1,
           },
         ],
-        payment_method_types: methods(),
+        payment_method_types: options.methods ?? methods(),
         description: `Sagot ${pack.label} pack`,
         reference_number: reference,
         // Echoed back on the webhook. This is the only link between a payment
@@ -174,14 +176,22 @@ export function verifySignature(options: {
   rawBody: string;
   secret: string;
   live: boolean;
-  /** Reject anything older than this, to blunt replays. Zero disables it. */
+  /**
+   * Reject anything older than this. Zero disables it.
+   *
+   * A day, not a few minutes. Granting is idempotent on the checkout session
+   * id, so a replayed delivery already grants nothing and this window is only
+   * defence in depth. A retry of a delivery that failed, however, is ordinary
+   * traffic, and refusing one because it arrived late means money taken and
+   * credits never granted. The expensive mistake is the strict window.
+   */
   toleranceSeconds?: number;
   now?: Date;
 }): boolean {
   const parsed = parseSignature(options.header);
   if (!parsed) return false;
 
-  const tolerance = options.toleranceSeconds ?? 300;
+  const tolerance = options.toleranceSeconds ?? 86_400;
   if (tolerance > 0) {
     const sent = Number(parsed.timestamp);
     if (!Number.isFinite(sent)) return false;
@@ -194,6 +204,19 @@ export function verifySignature(options: {
     .digest("hex");
 
   return sameString(expected, options.live ? parsed.live : parsed.test);
+}
+
+/**
+ * How many seconds ago a delivery was signed, or null if unreadable.
+ *
+ * Only for logging. Nothing is refused on the strength of it.
+ */
+export function signatureAgeSeconds(header: string | null, now = new Date()): number | null {
+  const parsed = parseSignature(header);
+  if (!parsed) return null;
+  const sent = Number(parsed.timestamp);
+  if (!Number.isFinite(sent)) return null;
+  return Math.floor(now.getTime() / 1000) - sent;
 }
 
 /** The same check, using the configured secret and mode. */

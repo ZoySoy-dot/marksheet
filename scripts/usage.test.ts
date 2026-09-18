@@ -13,6 +13,8 @@ import {
   monthStart,
   packFor,
   PACKS,
+  TEST_PACK,
+  testPackEnabled,
   TOKENS_PER_TYPICAL_IMPORT,
 } from "../src/lib/usage.ts";
 
@@ -111,4 +113,39 @@ test("an unknown pack id buys nothing", () => {
 test("spend is reported from the first of the month", () => {
   assert.equal(monthStart(new Date("2026-09-18T10:00:00Z")).toISOString(), "2026-09-01T00:00:00.000Z");
   assert.equal(monthStart(new Date("2026-01-01T00:00:00Z")).toISOString(), "2026-01-01T00:00:00.000Z");
+});
+
+test("the test pack is refused unless the deployment switches it on", () => {
+  const before = process.env.SAGOT_TEST_PACK;
+  try {
+    delete process.env.SAGOT_TEST_PACK;
+    assert.equal(testPackEnabled(), false);
+    assert.equal(packFor(TEST_PACK.id), null, "knowing the id must not be enough");
+
+    process.env.SAGOT_TEST_PACK = "1";
+    assert.equal(testPackEnabled(), true);
+    assert.equal(packFor(TEST_PACK.id)?.php, 1);
+
+    // Anything other than exactly "1" leaves it off.
+    process.env.SAGOT_TEST_PACK = "true";
+    assert.equal(packFor(TEST_PACK.id), null);
+  } finally {
+    if (before === undefined) delete process.env.SAGOT_TEST_PACK;
+    else process.env.SAGOT_TEST_PACK = before;
+  }
+});
+
+test("the test pack is not in the catalogue the top-up page is built from", () => {
+  assert.equal(PACKS.some((pack) => pack.id === TEST_PACK.id), false);
+});
+
+test("switching the test pack on does not shadow a real pack", () => {
+  const before = process.env.SAGOT_TEST_PACK;
+  try {
+    process.env.SAGOT_TEST_PACK = "1";
+    for (const pack of PACKS) assert.equal(packFor(pack.id)?.php, pack.php);
+  } finally {
+    if (before === undefined) delete process.env.SAGOT_TEST_PACK;
+    else process.env.SAGOT_TEST_PACK = before;
+  }
 });

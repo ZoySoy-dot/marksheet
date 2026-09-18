@@ -99,8 +99,27 @@ export const PACKS: Pack[] = [
   { id: "large", label: "Large", php: 199, tokens: 800_000 },
 ];
 
-export const packFor = (id: unknown): Pack | null =>
-  PACKS.find((pack) => pack.id === id) ?? null;
+/**
+ * One peso, for proving the payment path end to end without spending real money
+ * on it.
+ *
+ * Deliberately not in PACKS: the top-up page is built from that list, so this
+ * never appears there, and the value-per-peso rule the other packs follow does
+ * not have to bend around it. Knowing the id is not enough to buy one either,
+ * because it is refused unless SAGOT_TEST_PACK is set on the deployment.
+ */
+export const TEST_PACK: Pack = { id: "test", label: "Test", php: 1, tokens: 1_000 };
+
+export const testPackEnabled = (): boolean => process.env.SAGOT_TEST_PACK === "1";
+
+/** Methods the test checkout offers. Maya and QR Ph, as asked for. */
+export const TEST_PACK_METHODS = ["paymaya", "qrph"];
+
+export const packFor = (id: unknown): Pack | null => {
+  // Checked before the catalogue so a real pack can never be shadowed by it.
+  if (id === TEST_PACK.id) return testPackEnabled() ? TEST_PACK : null;
+  return PACKS.find((pack) => pack.id === id) ?? null;
+};
 
 /** The first of the current month, UTC. Used for reporting spend, not quota. */
 export const monthStart = (now: Date): Date =>

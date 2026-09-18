@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { auth } from "@/auth";
 import { apiError } from "@/lib/api";
 import { isConfigured, openCheckout, PaymongoNotConfiguredError } from "@/lib/paymongo";
-import { packFor } from "@/lib/usage";
+import { packFor, TEST_PACK, TEST_PACK_METHODS } from "@/lib/usage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +44,7 @@ export async function POST(request: Request) {
       email: session.user.email ?? null,
       successUrl: `${origin}/topup?paid=1`,
       cancelUrl: `${origin}/topup?cancelled=1`,
+      ...(pack.id === TEST_PACK.id ? { methods: TEST_PACK_METHODS } : {}),
     });
 
     return NextResponse.json({ url: checkout.url });

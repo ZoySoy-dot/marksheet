@@ -121,13 +121,38 @@ test("a signature lifted onto a different timestamp is rejected", () => {
   assert.equal(ok, false);
 });
 
-test("an old but correctly signed delivery is refused as a replay", () => {
+test("a retry an hour late is still accepted, because refusing it loses a payment", () => {
   const old = String(Math.floor(NOW.getTime() / 1000) - 3600);
   const ok = verifySignature({
     header: header({ t: old, te: sign(old, BODY) }),
     rawBody: BODY,
     secret: SECRET,
     live: false,
+    now: NOW,
+  });
+  assert.equal(ok, true);
+});
+
+test("a delivery older than the day-long window is still refused", () => {
+  const ancient = String(Math.floor(NOW.getTime() / 1000) - 90_000);
+  const ok = verifySignature({
+    header: header({ t: ancient, te: sign(ancient, BODY) }),
+    rawBody: BODY,
+    secret: SECRET,
+    live: false,
+    now: NOW,
+  });
+  assert.equal(ok, false);
+});
+
+test("the window can still be tightened by a caller that wants it", () => {
+  const old = String(Math.floor(NOW.getTime() / 1000) - 3600);
+  const ok = verifySignature({
+    header: header({ t: old, te: sign(old, BODY) }),
+    rawBody: BODY,
+    secret: SECRET,
+    live: false,
+    toleranceSeconds: 300,
     now: NOW,
   });
   assert.equal(ok, false);
